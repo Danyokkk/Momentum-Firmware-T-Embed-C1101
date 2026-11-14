@@ -50,6 +50,14 @@ endif()
 message(STATUS "Firmware version (PROJECT_VER): ${PROJECT_VER}")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+# dependencies.lock pins the managed components for the ESP32-S3 boards. The
+# component manager rewrites that file when another IDF target is built
+# from the same tree (it re-solves and picks newer versions), which silently
+# un-pins every later build. Builds for other boards therefore pass their own
+# lock path (tools/tembed_plus/cross_build.py) and leave this one alone.
+if(DEFINED FLIPPER_DEPENDENCIES_LOCK)
+    idf_build_set_property(DEPENDENCIES_LOCK "${FLIPPER_DEPENDENCIES_LOCK}")
+endif()
 # Visible to every component and every generated app target.
 idf_build_set_property(COMPILE_DEFINITIONS "FURI_PROFILE_LAB=1" APPEND)
 project(furi_esp32)

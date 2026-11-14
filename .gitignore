@@ -46,4 +46,4 @@ releases/*.zip
 dist/
 
 # tools/tembed_plus/cross_build.py output
-/cross_build_results.json
+/cross_build_*.json

@@ -191,6 +191,8 @@ def cmd_doctor(_args) -> int:
 
 def cmd_build(_args) -> int:
     idf, env = prepare()
+    lock = REPO_ROOT / "dependencies.lock"
+    lock_before = sha256(lock)
     sdkconfig = REPO_ROOT / BUILD_DIR / "sdkconfig"
     if not sdkconfig.is_file():
         rc = idf_py(idf, env, "set-target", LOCK["idf_target"])
@@ -199,6 +201,14 @@ def cmd_build(_args) -> int:
     rc = idf_py(idf, env, "build")
     if rc != 0:
         return rc
+    # The managed components must be the pinned ones: the component manager
+    # rewrites dependencies.lock when it re-solves, which would mean this image
+    # was built from versions nobody pinned.
+    if sha256(lock) != lock_before:
+        fail(
+            "the build rewrote dependencies.lock (managed components were re-resolved). "
+            "Restore it with `git checkout -- dependencies.lock` and build again."
+        )
     # The build must leave the SDK as it found it.
     problems = check_idf(idf)
     if problems:

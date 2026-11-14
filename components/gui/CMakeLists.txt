@@ -5,7 +5,9 @@ else()
 endif()
 
 if(FLIPPER_BOARD STREQUAL "thormini")
-    set(TEXT_INPUT_SRC "modules/text_input_thormini.c")
+    # The file lives next to this CMakeLists.txt, not under modules/; upstream's
+    # path made the thormini board fail at configure time.
+    set(TEXT_INPUT_SRC "text_input_thormini.c")
 else()
     set(TEXT_INPUT_SRC "modules/text_input.c")
 endif()

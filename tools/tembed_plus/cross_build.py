@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 import time
@@ -51,6 +52,13 @@ def build_board(board: str, target: str, idf: Path, env: dict[str, str]) -> dict
     defaults = ["sdkconfig.defaults"]
     if (REPO_ROOT / f"sdkconfig.defaults.{board}").is_file():
         defaults.append(f"sdkconfig.defaults.{board}")
+    # Each board resolves managed components against its own copy of the lock,
+    # so building another IDF target cannot rewrite the repository's pinned
+    # dependencies.lock (see the note in CMakeLists.txt).
+    board_lock = REPO_ROOT / build_dir / "dependencies.lock"
+    board_lock.parent.mkdir(parents=True, exist_ok=True)
+    if not board_lock.is_file():
+        shutil.copyfile(REPO_ROOT / "dependencies.lock", board_lock)
     python_env = Path(env["IDF_PYTHON_ENV_PATH"])
     python = python_env / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
     base = [
@@ -62,6 +70,7 @@ def build_board(board: str, target: str, idf: Path, env: dict[str, str]) -> dict
         "-DFLIPPER_PROFILE=lab",
         f"-DSDKCONFIG={build_dir}/sdkconfig",
         f"-DSDKCONFIG_DEFAULTS={';'.join(defaults)}",
+        f"-DFLIPPER_DEPENDENCIES_LOCK={board_lock.as_posix()}",
     ]
     board_env = dict(env, FLIPPER_BOARD=board, FLIPPER_PROFILE="lab")
     log_path = REPO_ROOT / f"{build_dir}.log"
@@ -121,6 +130,7 @@ def main() -> int:
     if problems:
         tembed.fail("toolchain does not match toolchain.lock.json:\n  - " + "\n  - ".join(problems))
     env = tembed.idf_environment(idf)
+    lock_before = tembed.sha256(REPO_ROOT / "dependencies.lock")
 
     results = []
     for board in args.boards or list(BOARDS):
@@ -132,6 +142,8 @@ def main() -> int:
         tembed.note(json.dumps(outcome))
         (REPO_ROOT / args.results).write_text(json.dumps(results, indent=2), encoding="utf-8")
 
+    if tembed.sha256(REPO_ROOT / "dependencies.lock") != lock_before:
+        tembed.fail("a build rewrote dependencies.lock; restore it with: git checkout -- dependencies.lock")
     problems = tembed.check_idf(idf)
     if problems:
         tembed.fail("a build modified the SDK:\n  - " + "\n  - ".join(problems))
