@@ -29,6 +29,22 @@ const SubGhzProtocol* const subghz_protocol_registry_items[] = {
     &subghz_protocol_elplast,       &subghz_protocol_treadmill37,
     &subghz_protocol_beninca_arc,   &subghz_protocol_jarolift,
     &subghz_protocol_ditec_gol4,    &subghz_protocol_keyfinder,
+    /* Weather-station sensor decoders, ported from Momentum
+     * (lib/subghz/protocols, see docs/tembed-plus/PROVENANCE.md). Order follows
+     * Momentum: bresser_3ch before lacrosse_tx, solight_te44 before auriol_th. */
+    &ws_protocol_infactory,         &ws_protocol_thermopro_tx4,
+    &ws_protocol_nexus_th,          &ws_protocol_gt_wt_02,
+    &ws_protocol_gt_wt_03,          &ws_protocol_acurite_606tx,
+    &ws_protocol_acurite_609txc,    &ws_protocol_acurite_986,
+    &ws_protocol_bresser_3ch,       &ws_protocol_lacrosse_tx,
+    &ws_protocol_lacrosse_tx141thbv2, &ws_protocol_oregon2,
+    &ws_protocol_oregon3,           &ws_protocol_acurite_592txr,
+    &ws_protocol_ambient_weather,   &ws_protocol_solight_te44,
+    &ws_protocol_auriol_th,         &ws_protocol_oregon_v1,
+    &ws_protocol_tx_8300,           &ws_protocol_wendox_w6726,
+    &ws_protocol_auriol_ahfl,       &ws_protocol_kedsum_th,
+    &ws_protocol_emose601x,         &ws_protocol_acurite_5n1,
+    &ws_protocol_vauno_en8822c,
     &tpms_protocol_schrader_gg4, &tpms_protocol_ford,
     &tpms_protocol_renault,      &tpms_protocol_citroen,
     &tpms_protocol_pmv107j,         &subghz_protocol_holtek_ht6p20b,

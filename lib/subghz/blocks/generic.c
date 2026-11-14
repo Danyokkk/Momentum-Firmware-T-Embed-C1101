@@ -72,6 +72,68 @@ void subghz_block_generic_get_preset_name(const char* preset_name, FuriString* p
     furi_string_set(preset_str, preset_name_temp);
 }
 
+/* Shared key-file header (file type, frequency, preset, protocol name) used by
+ * the sensor-style block serializers (ws_generic). Mirrors the header that
+ * subghz_block_generic_serialize() writes below so every .sub file from this
+ * port has the same leading fields. API taken from Momentum's
+ * lib/subghz/blocks/generic_i.h; Momentum additionally writes Lat/Lon, which
+ * this port's key files do not carry. */
+SubGhzProtocolStatus subghz_block_generic_serialize_common(
+    const char* protocol_name,
+    FlipperFormat* flipper_format,
+    SubGhzRadioPreset* preset) {
+    furi_check(protocol_name);
+    furi_check(preset);
+    SubGhzProtocolStatus res = SubGhzProtocolStatusError;
+    FuriString* temp_str = furi_string_alloc();
+    do {
+        stream_clean(flipper_format_get_raw_stream(flipper_format));
+        if(!flipper_format_write_header_cstr(
+               flipper_format, SUBGHZ_KEY_FILE_TYPE, SUBGHZ_KEY_FILE_VERSION)) {
+            FURI_LOG_E(TAG, "Unable to add header");
+            res = SubGhzProtocolStatusErrorParserHeader;
+            break;
+        }
+
+        if(!flipper_format_write_uint32(flipper_format, "Frequency", &preset->frequency, 1)) {
+            FURI_LOG_E(TAG, "Unable to add Frequency");
+            res = SubGhzProtocolStatusErrorParserFrequency;
+            break;
+        }
+
+        subghz_block_generic_get_preset_name(furi_string_get_cstr(preset->name), temp_str);
+        if(!flipper_format_write_string_cstr(
+               flipper_format, "Preset", furi_string_get_cstr(temp_str))) {
+            FURI_LOG_E(TAG, "Unable to add Preset");
+            res = SubGhzProtocolStatusErrorParserPreset;
+            break;
+        }
+        if(!strcmp(furi_string_get_cstr(temp_str), "FuriHalSubGhzPresetCustom")) {
+            if(!flipper_format_write_string_cstr(
+                   flipper_format, "Custom_preset_module", "CC1101")) {
+                FURI_LOG_E(TAG, "Unable to add Custom_preset_module");
+                res = SubGhzProtocolStatusErrorParserCustomPreset;
+                break;
+            }
+            if(!flipper_format_write_hex(
+                   flipper_format, "Custom_preset_data", preset->data, preset->data_size)) {
+                FURI_LOG_E(TAG, "Unable to add Custom_preset_data");
+                res = SubGhzProtocolStatusErrorParserCustomPreset;
+                break;
+            }
+        }
+        if(!flipper_format_write_string_cstr(flipper_format, "Protocol", protocol_name)) {
+            FURI_LOG_E(TAG, "Unable to add Protocol");
+            res = SubGhzProtocolStatusErrorParserProtocolName;
+            break;
+        }
+
+        res = SubGhzProtocolStatusOk;
+    } while(false);
+    furi_string_free(temp_str);
+    return res;
+}
+
 SubGhzProtocolStatus subghz_block_generic_serialize(
     SubGhzBlockGeneric* instance,
     FlipperFormat* flipper_format,
