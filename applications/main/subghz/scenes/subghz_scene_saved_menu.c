@@ -35,7 +35,12 @@ void subghz_scene_saved_menu_on_enter(void* context) {
         subghz_scene_saved_menu_submenu_callback,
         subghz);
 
+#ifdef FURI_PROFILE_LAB
+    /* Signal Settings edits a rolling-code counter mode: not offered. */
+    if(false) {
+#else
     if(furi_hal_rtc_is_flag_set(FuriHalRtcFlagDebug)) {
+#endif
         submenu_add_item(
             subghz->submenu,
             "Signal Settings",

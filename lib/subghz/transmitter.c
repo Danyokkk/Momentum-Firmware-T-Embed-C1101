@@ -17,6 +17,17 @@ SubGhzTransmitter*
     const SubGhzProtocol* protocol =
         subghz_protocol_registry_get_by_name(protocol_registry_items, protocol_name);
 
+#ifdef FURI_PROFILE_LAB
+    /* Lab profile: rolling-code (SubGhzProtocolTypeDynamic) protocols are
+     * receive/decode only. Creating their encoder is what generates the next
+     * valid code for a KeeLoq, Security+, Somfy... remote, whether for "Add
+     * Manually", for sending a saved file or for an external app, so it is
+     * refused here once for all of them. Static-code and RAW protocols are not
+     * affected. */
+    if(protocol && protocol->type == SubGhzProtocolTypeDynamic) {
+        return NULL;
+    }
+#endif
     if(protocol && protocol->encoder && protocol->encoder->alloc) {
         instance = malloc(sizeof(SubGhzTransmitter));
         instance->protocol = protocol;

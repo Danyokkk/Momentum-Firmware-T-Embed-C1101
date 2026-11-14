@@ -53,6 +53,7 @@ set(FURI_HAL_SRCS
     "furi_hal_flash.c"
     "furi_hal_info.c"
     "furi_hal_region.c"
+    "furi_hal_region_table.c"
     "furi_hal_version.c"
     "furi_hal_gpio.c"
     "furi_hal_resources.c"

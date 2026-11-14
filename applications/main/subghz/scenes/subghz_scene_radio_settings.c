@@ -1,4 +1,6 @@
 #include "../subghz_i.h"
+#include <furi_hal_region.h>
+#include <furi_hal_region_table.h>
 #include "../helpers/subghz_custom_event.h"
 #include <lib/toolbox/value_index.h>
 #include <applications/drivers/subghz/cc1101_ext/cc1101_ext_interconnect.h>
@@ -164,6 +166,12 @@ static void subghz_scene_receiver_config_set_timestamp_file_names(VariableItem* 
     subghz_last_settings_save(subghz->last_settings);
 }
 
+static void subghz_scene_radio_settings_set_region(VariableItem* item) {
+    uint8_t index = variable_item_get_current_value_index(item);
+    furi_hal_region_select(index);
+    variable_item_set_current_value_text(item, furi_hal_region_table_label(index));
+}
+
 void subghz_scene_radio_settings_on_enter(void* context) {
     SubGhz* subghz = context;
 
@@ -172,6 +180,18 @@ void subghz_scene_radio_settings_on_enter(void* context) {
     VariableItem* item;
 
     // Module selection removed — ESP32 port has no external CC1101 option
+
+    // TX Region: which bands may be transmitted on. "Not set" (the default)
+    // disables transmit altogether. Stored in NVS by the HAL.
+    item = variable_item_list_add(
+        subghz->variable_item_list,
+        "TX Region",
+        furi_hal_region_table_count(),
+        subghz_scene_radio_settings_set_region,
+        subghz);
+    value_index = furi_hal_region_get_selected();
+    variable_item_set_current_value_index(item, value_index);
+    variable_item_set_current_value_text(item, furi_hal_region_table_label(value_index));
 
     //Add TX Power
     item = variable_item_list_add(

@@ -17,6 +17,7 @@ typedef enum {
     SubGhzTxRxStartTxStateOk,
     SubGhzTxRxStartTxStateErrorOnlyRx,
     SubGhzTxRxStartTxStateErrorParserOthers,
+    SubGhzTxRxStartTxStateErrorRollingCode, /**< rolling-code protocol: decode only */
 } SubGhzTxRxStartTxState;
 
 /**

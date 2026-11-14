@@ -3,6 +3,7 @@
 #include "../helpers/subghz_gen_info.h"
 #include "subghz_scene_start.h"
 #include <lib/subghz/blocks/math.h>
+#include <lib/subghz/protocols/protocol_items.h>
 
 #define TAG "SubGhzSetType"
 
@@ -96,10 +97,29 @@ static const char* submenu_names[SetTypeMAX] = {
     [SetTypeSecPlus_v2_433_00] = "Security+2.0 433MHz",
 };
 
+#ifdef FURI_PROFILE_LAB
+/* Lab profile: "Add Manually" only creates fixed-code remotes (the kind with
+ * DIP switches or a learned static code), for pairing with a receiver you own.
+ * Entries that generate a rolling-code remote are not listed, and their
+ * encoders cannot be created anyway (lib/subghz/transmitter.c). */
+static bool subghz_scene_set_type_is_static(SetType type) {
+    GenInfo info;
+    subghz_gen_info_reset(&info);
+    subghz_scene_set_type_fill_generation_infos(&info, type);
+    if(info.type != GenData || !info.data.name) return false;
+    const SubGhzProtocol* protocol =
+        subghz_protocol_registry_get_by_name(&subghz_protocol_registry, info.data.name);
+    return protocol && protocol->type == SubGhzProtocolTypeStatic;
+}
+#endif
+
 void subghz_scene_set_type_on_enter(void* context) {
     SubGhz* subghz = context;
 
     for(SetType i = 0; i < SetTypeMAX; i++) {
+#ifdef FURI_PROFILE_LAB
+        if(!subghz_scene_set_type_is_static(i)) continue;
+#endif
         submenu_add_item(
             subghz->submenu, submenu_names[i], i, subghz_scene_set_type_submenu_callback, subghz);
     }

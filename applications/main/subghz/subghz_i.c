@@ -2,6 +2,7 @@
 
 #include "assets_icons.h"
 #include "subghz/types.h"
+#include <furi_hal_region.h>
 #include <furi.h>
 #include <notification/notification.h>
 #include <notification/notification_messages.h>
@@ -30,6 +31,20 @@ bool subghz_tx_start(SubGhz* subghz, FlipperFormat* flipper_format) {
     case SubGhzTxRxStartTxStateErrorOnlyRx:
         subghz_dialog_message_freq_error(subghz, true);
         break;
+    case SubGhzTxRxStartTxStateErrorRollingCode: {
+        DialogMessage* message = dialog_message_alloc();
+        dialog_message_set_header(message, "Decode only", 63, 3, AlignCenter, AlignTop);
+        dialog_message_set_text(
+            message,
+            "Rolling-code remotes\ncan be read here,\nnot transmitted.",
+            63,
+            20,
+            AlignCenter,
+            AlignTop);
+        dialog_message_show(subghz->dialogs, message);
+        dialog_message_free(message);
+        break;
+    }
 
     default:
         return true;
@@ -46,7 +61,11 @@ void subghz_dialog_message_freq_error(SubGhz* subghz, bool only_rx) {
 
     if(only_rx) {
         header_text = "Transmission is blocked";
-        message_text = "Frequency\nis outside of\ndefault range.\nCheck docs.";
+        if(!furi_hal_region_is_provisioned()) {
+            message_text = "No TX region set.\nChoose one in\nRadio Settings.";
+        } else {
+            message_text = "Frequency is\noutside your\nregion's TX\nbands.";
+        }
     }
 
     dialog_message_set_header(message, header_text, 63, 3, AlignCenter, AlignTop);
@@ -104,7 +123,14 @@ bool subghz_key_load(SubGhz* subghz, const char* file_path, bool show_dialog) {
         }
 
         // TODO: use different frequency allowed lists for differnet modules (non cc1101)
+        /* Lab profile: a file whose frequency is not transmittable here (outside
+         * the region bands, or no region chosen) can still be opened and
+         * inspected. Transmit is refused later, in subghz_tx_start(). */
+#ifdef FURI_PROFILE_LAB
+        if(false) {
+#else
         if(!furi_hal_subghz_is_tx_allowed(temp_data32)) {
+#endif
             FURI_LOG_E(TAG, "This frequency can only be used for RX");
 
             load_key_state = SubGhzLoadKeyStateOnlyRx;

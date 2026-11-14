@@ -310,6 +310,19 @@ SubGhzTxRxStartTxState subghz_txrx_tx_start(SubGhzTxRx* instance, FlipperFormat*
         ret = SubGhzTxRxStartTxStateOk;
 
         SubGhzRadioPreset* preset = instance->preset;
+#ifdef FURI_PROFILE_LAB
+        {
+            const SubGhzProtocol* named = subghz_protocol_registry_get_by_name(
+                subghz_environment_get_protocol_registry(instance->environment),
+                furi_string_get_cstr(temp_str));
+            if(named && named->type == SubGhzProtocolTypeDynamic) {
+                FURI_LOG_I(TAG, "Rolling-code protocol: decode only");
+                instance->transmitter = NULL;
+                ret = SubGhzTxRxStartTxStateErrorRollingCode;
+                break;
+            }
+        }
+#endif
         instance->transmitter =
             subghz_transmitter_alloc_init(instance->environment, furi_string_get_cstr(temp_str));
 
@@ -348,7 +361,10 @@ SubGhzTxRxStartTxState subghz_txrx_tx_start(SubGhzTxRx* instance, FlipperFormat*
             ret = SubGhzTxRxStartTxStateErrorParserOthers;
         }
         if(ret != SubGhzTxRxStartTxStateOk) {
-            subghz_transmitter_free(instance->transmitter);
+            /* subghz_transmitter_free() asserts on NULL, and the transmitter is
+             * NULL when the protocol has no (permitted) encoder. */
+            if(instance->transmitter) subghz_transmitter_free(instance->transmitter);
+            instance->transmitter = NULL;
             if(instance->txrx_state != SubGhzTxRxStateIDLE) {
                 subghz_txrx_idle(instance);
             }

@@ -14,6 +14,7 @@
 #include <furi_hal_power.h>
 #include <cc1101.h>
 #include "boards/board.h"
+#include "furi_hal_region.h"
 
 static const char* TAG = "FuriHalSubGhz";
 
@@ -689,6 +690,15 @@ uint32_t furi_hal_subghz_set_frequency_and_path(uint32_t value) {
 }
 
 bool furi_hal_subghz_is_tx_allowed(uint32_t value) {
+    /* Region first: outside the operator's chosen region bands (or with no
+     * region chosen) nothing is transmitted. furi_hal_subghz_set_frequency()
+     * derives the TX/RX-only regulation state from this function and
+     * furi_hal_subghz_tx()/start_async_tx() refuse in the RX-only state, so
+     * this one check covers every caller. */
+    if(!furi_hal_region_is_frequency_allowed(value)) {
+        return false;
+    }
+
     if(!furi_hal_subghz.dangerous_frequency_i &&
        !(value >= 299999755 && value <= 350000335) &&
        !(value >= 386999938 && value <= 467750000) &&
