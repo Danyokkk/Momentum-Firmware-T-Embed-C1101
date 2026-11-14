@@ -54,6 +54,16 @@ Local changes:
   became `!((data >> 27) & 0x01)`. The original negates the whole shifted word
   instead of testing bit 27; a host compiler flags it
   (`-Wlogical-not-parentheses`). Worth sending upstream.
+- `lib/subghz/protocols/lacrosse_tx.c`: an unknown message type is now
+  rejected. Upstream calls `furi_crash()` there, on data that comes straight
+  off the air behind a 4-bit checksum, so a stray or crafted frame could reboot
+  the device.
+- `lib/subghz/protocols/lacrosse_tx.c`, `emos_e601x.c`: loading a key file now
+  checks the same bit count the decoder saves (44 and 120). Upstream checked a
+  different constant and refused the files it had written itself.
+- `lib/subghz/protocols/auriol_ahfl.c`: the 6-bit checksum is compared modulo
+  64. Upstream compared the unmasked nibble sum and rejected every frame whose
+  sum reached 64, including the example in its own header comment.
 - `lib/subghz/blocks/generic.c`: added `subghz_block_generic_serialize_common()`
   (declared by Momentum's `generic_i.h`). Written to match this port's existing
   key-file header, so unlike Momentum's version it does not write `Lat`/`Lon`.
@@ -61,16 +71,53 @@ Local changes:
   in Momentum's order. Momentum itself keeps these lines commented out in its
   main registry; they are active here.
 
-Tests: `tests/subghz_ws/run.py` (host). Real captures for Bresser 3CH (two
-frame formats), Solight TE44, Vauno EN8822C and Acurite 592TXR decode to the
-readings in upstream's own key files. The other 20 decoders are compiled, run
-against a mixed real-traffic capture and two million synthetic pulses without a
-false decode or crash, but have **no known-good capture**, so their decoding is
-unverified. Nothing has been received over the air on a T-Embed.
+Tests: `tests/subghz_ws/run.py` (host). Four decoders are checked against five
+real upstream captures: Bresser 3CH (two frame formats), Solight TE44, Vauno
+EN8822C and Acurite 592TXR. The other 21 are checked against synthetic
+waveforms generated from each decoder's own source
+(`tests/subghz_ws/make_synthetic_fixtures.py`). A synthetic fixture shows the
+decoder is consistent with our reading of it and guards against regressions; it
+does **not** show the decoder matches a real sensor. `tests/subghz_ws/README.md`
+lists further suspected upstream decoder issues that were left unchanged
+because fixing a bit layout without a real capture would be guesswork. Nothing
+has been received over the air on a T-Embed.
+
+Five of the 25 decoders (ThermoPRO-TX4, Nexus-TH, Auriol HG06061, Oregon2,
+Oregon3) have no working integrity check, so they cannot tell a damaged frame
+from a good one.
 
 Two of the 25 (`acurite_592txr`, `nexus_th`) also include upstream's encoder, so
 the app will offer to transmit a saved reading for those. That path is compiled
 but untested.
+
+### 2. Sub-GHz region presets (Flipper Devices documentation → this fork)
+
+| | |
+| --- | --- |
+| Source | the per-region transmission band table at https://docs.flipper.net/zero/sub-ghz/frequencies, read 2026-11-14 |
+| Destination | `components/furi_hal/furi_hal_region_table.{c,h}`, `furi_hal_region.c` |
+| Nature | band edges (facts) transcribed into a new table; no upstream code copied. The `FuriHalRegion` struct and API names are the port's existing ones (from Flipper firmware, GPL-3.0) |
+| Tests | `tests/subghz_region/run.py` (host) |
+
+The page lists country groups; the presets here use one short label per group.
+Only band edges are enforced. Upstream Flipper firmware provisions regions from
+its update server and also carries per-band power and duty-cycle values, which
+this table does not have.
+
+### 3. BLE Lab (new code, with one borrowed idea)
+
+`applications/main/ble_lab/` is new. Two things came from the port's removed
+Bluetooth app (`applications/main/ble_spam`, Sor3nt, no stated licence): the
+order of calls that borrows the Bluetooth stack from the system service and
+returns it, and the list of public advertising fields used as device hints
+(Apple company id 0x004C with types 0x12/0x07/0x10, Samsung 0x0075, Tile
+service UUIDs 0xFEED/0xFD84). The parser and its tests were written from the
+Bluetooth Core Specification Supplement's AD-structure format, not copied.
+
+### 4. WiFi Lab
+
+`applications/main/wifi_lab/` is new code that calls the port's existing
+`wlan_hal` and `wifi` service APIs.
 
 ## Not imported (candidates)
 
@@ -105,3 +152,7 @@ See `FEATURE_MATRIX.md` for the reasons and `fam_config.py` /
 | Sub-GHz jammer and brute-forcer | Sor3nt `applications/main/subghz` | `LAB_EXCLUDED_SOURCES` + `#ifndef FURI_PROFILE_LAB` |
 | Raw 802.11 TX, beacon spam | Sor3nt `components/wifi/wlan_hal.c` | `#ifndef FURI_PROFILE_LAB` |
 | ESP-NOW mesh start | Sor3nt `applications/services/desktop/helpers/mesh_service.c` | early return under `FURI_PROFILE_LAB`; menu entry hidden |
+| NFC write, emulate, clone, unlock and key-recovery scenes (39) | Flipper NFC app as carried by Sor3nt `applications/main/nfc` | `ADD_SCENE_GATED` + `LAB_EXCLUDED_SOURCES`; replaced by `nfc_scene_lab_blocked.c` |
+| PN532 card-emulation (target) mode | Sor3nt `components/furi_hal/furi_hal_nfc.c` | early return in `furi_hal_nfc_listener_wait_event()` |
+| Rolling-code encoders | Flipper/Unleashed protocol encoders in `lib/subghz/protocols` | `subghz_transmitter_alloc_init()` returns NULL for `SubGhzProtocolTypeDynamic`; the encoder sources are still compiled because each shares a file with its decoder |
+| Rolling-code "Add Manually" entries, counter-mode editing | Unleashed-derived `subghz_scene_set_type.c`, `subghz_scene_signal_settings.c` | filtered or hidden under `FURI_PROFILE_LAB` |

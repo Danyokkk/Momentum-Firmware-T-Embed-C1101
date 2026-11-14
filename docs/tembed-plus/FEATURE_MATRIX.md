@@ -56,11 +56,13 @@ ships it and it still compiles", not "it works".
 | Read, Read RAW, saved-signal browser, frequency analyzer, RF spectrum | built | build | | receive a known 433.92 MHz remote you own; save; reload |
 | 58 protocol entries already in upstream's registry (remotes, sensors, RAW, BinRAW) | built | build | includes rolling-code families | decode at least one static and one sensor protocol |
 | TPMS decoders (Schrader, Ford, Renault, Citroën, PMV-107J) | built | build | receive-side | — |
-| **25 weather-station decoders** (from Momentum) | new | host test: 5 verified against real captures, 20 compile + noise only | see `PROVENANCE.md`; decode-only except Acurite 592TXR and Nexus-TH | receive your own outdoor sensor; reading matches its display |
-| Transmit a saved signal | built | build | limited to 300–350, 387–467.75, 779–928 MHz in the HAL | transmit to your own receiver; confirm on a second receiver |
+| **25 weather-station decoders** (from Momentum) | new | host test: 4 decoders against 5 real captures, 21 against synthetic fixtures | see `PROVENANCE.md` and `tests/subghz_ws/README.md`; decode-only except Acurite 592TXR and Nexus-TH | receive your own outdoor sensor; reading matches its display |
+| Transmit a saved static-code or RAW signal | built | build | allowed only inside the chosen region's bands, and only inside 300–350, 387–467.75, 779–928 MHz | set the region; transmit to your own receiver; confirm on a second receiver |
+| **TX Region** (Radio Settings) | new | host test (table), build (HAL hook, NVS) | ten presets from Flipper's published table; default "Not set" = no transmit at all. Enforced in `furi_hal_subghz_is_tx_allowed()`, so it covers the app, CLI, scripts and external apps. Power and duty cycle are not enforced | with "Not set": TX refused with the "No TX region set" dialog. With EU: 433.92 allowed, 315.00 refused |
+| Transmit rolling-code protocols | excluded | build | the library refuses to create an encoder for any `SubGhzProtocolTypeDynamic` protocol; they still decode. "Decode only" dialog on send | open a saved KeeLoq file, press Send, expect the dialog and no RF |
 | Extended ("dangerous") TX range | excluded | build | HAL ignores the SD-card switch | request 280 MHz TX, expect refusal |
-| Region-aware TX limits | needs porting | — | `furi_hal_region` is a stub that allows everything inside the three bands. **You are responsible for your local band plan and duty cycle.** | — |
-| Add Manually (incl. rolling-code remotes), Playlist | built | build | inherited; see "Open decisions" | — |
+| Add Manually | built, filtered | build | lists fixed-code entries only (Princeton, CAME, Nice Flo, Gate TX, Linear, …); rolling-code entries and counter editing are hidden | list contains no "KL:", FAAC SLH, Somfy or Security+ entries |
+| Playlist | built | build | replays saved files in order; each transmit goes through the same region and rolling-code gates | — |
 | Jammer | excluded | image check | | menu entry absent |
 | Code brute-forcer | excluded | image check | | menu entry absent |
 | POCSAG, X10, Hörmann BiSecur, other Momentum/Unleashed-only protocols | needs porting | — | candidates listed in `PROVENANCE.md` | — |
@@ -77,9 +79,11 @@ ships it and it still compiles", not "it works".
 
 | Feature | Status | Evidence | Notes | Acceptance check on hardware |
 | --- | --- | --- | --- | --- |
-| Tag detection, UID read, supported-protocol parsers, save | built | build | PN532 limits apply: no ISO 15693, limited emulation | read an NTAG and a MIFARE Classic test card you own |
-| MIFARE Classic key dictionary attack, mfkey32 nonce collection | built — **not yet gated** | build | inherited; see "Open decisions" | — |
-| Emulation, write, clone | built — **no confirmation step yet** | build | inherited; needs the on-device confirmation the brief asks for | — |
+| Tag detection, UID read, supported-protocol parsing, save | built | build | PN532 limits apply: no ISO 15693. MIFARE Classic without known keys shows type and UID only | read an NTAG and a MIFARE Classic test card you own |
+| Card parsers (transit, NDEF, …) | built loader, **prebuilt plugins** | not rebuilt | 42 `.fal` files from upstream's SD overlay; optional in the SD bundle | open a card one parser recognises |
+| MIFARE Classic / Ultralight C dictionary attacks, mfkey32 nonce collection, key lists | excluded | image check | scenes replaced by a "Not in this build" screen; sources not compiled | no "Extract MFC Keys" in the start menu; reading a keyless MFC ends at the result screen |
+| Unlock NTAG/Ultralight/SLIX, DES key unlock | excluded | image check | same mechanism | Extra Actions shows only "Read Specific Card Type" |
+| Emulation, write, clone, Add Manually, Edit UID, RPC emulation | excluded | image check (scenes); build (driver) | no protocol reports these features; scenes replaced; the PN532 driver never enters card-emulation mode. Per-protocol helper functions remain linked but unreachable | a saved card's menu has no Emulate or Write; hold the device to a reader and confirm it is not seen as a card |
 | 125 kHz LF RFID | unsupported / needs hardware | — | no LF front end. Upstream's RDM6300 UART accessory uses GPIO43/44, which the Plus nRF24 occupies | — |
 | iButton | unsupported | — | no 1-Wire hardware | — |
 
@@ -112,7 +116,7 @@ ships it and it still compiles", not "it works".
 | Feature | Status | Evidence | Notes |
 | --- | --- | --- | --- |
 | BLE stack, Bluetooth settings, mobile-app link | built | build | Wi-Fi and BLE share the radio; enabling one parks the other |
-| Passive BLE scan / tracker detector | needs porting | — | lived inside the removed BLE app next to the spam features; needs extracting on its own |
+| **BLE Lab**: passive scan, RSSI, address type, name, vendor, location-tag hint, CSV export | new | host test (advert parser), build (scan) | passive scan only; no connect, pair, write or advertise code. Needs Wi-Fi off (shared radio) | list fills near a phone; a sniffer shows no scan requests from the device |
 | Advertisement spam, writes to third-party devices | excluded | image check | |
 | Tracker impersonation (FindMy) | excluded | — | FAP left out of the SD bundle |
 
@@ -140,31 +144,41 @@ ships it and it still compiles", not "it works".
 | Third-party upload apps (wardriver, map) | not in the SD bundle |
 | Committed key material | KeeLoq manufacturer keys and a vehicle key-fob keystore exist in upstream's `sdcard/`; the bundle tool leaves the user keys and the keystore out. The U2F attestation pair is the public stock one. |
 
-## Open decisions
+## Decisions taken (second brief, 2026-11-14)
 
-These are inherited behaviours that the brief's safety rules touch but that
-were **not changed** in this pass. They need an owner decision, then work.
+The follow-up brief settled what the first pass had left open:
 
-1. **NFC key attacks.** MIFARE Classic dictionary/nested attacks and mfkey32
-   collection are still in the NFC app. They are how you recover keys for your
-   own cards, and also how you attack someone else's. Options: gate behind the
-   lab profile like the others, or keep with an explicit confirmation screen.
-2. **NFC emulate/write** has no "authorised test media only" confirmation.
-3. **Sub-GHz "Add Manually"** can generate rolling-code remotes for ~50
-   manufacturers, and **Playlist** replays saved signals in sequence. Both are
-   standard Flipper features within the legal TX bands, and both can be
-   misused against access systems.
-4. **Region enforcement** for Sub-GHz transmit does not exist yet.
-5. **Excluded sources are still in the tree**, uncompiled, to keep merges from
+| Question | Decision | Where |
+| --- | --- | --- |
+| NFC key attacks | not provided; explanation screen | `nfc_scene_config.h`, `nfc_scene_lab_blocked.c` |
+| NFC emulate / write / clone | not provided; read-only app | same, plus `furi_hal_nfc.c` |
+| Rolling-code generation and transmit | not provided; decode only | `lib/subghz/transmitter.c` |
+| Region enforcement | presets, default no-transmit | `furi_hal_region*.c` |
+
+## Still open
+
+1. **Excluded sources are still in the tree**, uncompiled, to keep merges from
    upstream clean. Deleting them is cleaner but makes every upstream merge
    conflict in those directories.
-6. **Mesh**: rebuild it properly, or drop it.
+2. **Mesh**: rebuild it with pairing, authentication and replay protection, or
+   drop it.
+3. **Prebuilt plugins and apps** (NFC parsers, games, tools) come from upstream
+   as binaries. They should be rebuilt from reviewed source before being relied
+   on; some may not load against this firmware's API table.
+4. **Transmit confirmation.** Static-code and RAW transmit is region-gated but
+   has no extra "I own this receiver" prompt beyond pressing Send.
+5. **Upstream licence.** Still no top-level licence file upstream; ask the
+   author before redistributing builds.
 
 ## Known gaps against the brief
 
 - No hardware validation of anything.
 - No signed updates (integrity check and rollback only).
-- No passive BLE tool, no visible-HID demo, no region table.
-- Host tests cover the new decoders only; the rest of the tree relies on
-  upstream's own suites.
+- No HID demonstration app, no on-device backup, no rebuilt mesh.
+- Region presets limit frequency only, not power or duty cycle.
+- NFC: some card-level menu items still appear and lead to the explanation
+  screen; an external app with its own NFC code is outside the gates.
+- Host tests cover the new decoders, the region table and the BLE advert
+  parser; the rest of the tree relies on upstream's own suites.
 - Battery life, RAM headroom, task stacks and SD throughput are unmeasured.
+- Remaining Momentum features are listed as "todo" in `MOMENTUM_PARITY.md`.

@@ -42,7 +42,12 @@ unmodified. Upstream's build used to patch that library inside the SDK; if you
 ever built upstream with this SDK, `doctor` fails and tells you how to restore
 it. `build` configures, compiles, and then runs
 `tools/tembed_plus/check_lab_exclusions.py` on the result. A build that links
-anything from the excluded list fails here.
+anything from the excluded list fails here. `build` also fails if
+`dependencies.lock` changed during the build: ESP-IDF's component manager
+rewrites that file when it re-resolves components (it does so if a board with
+a different chip is built from the same folder with upstream's scripts), and an
+image built that way is not the pinned one. Restore the file with
+`git checkout -- dependencies.lock` and build again.
 
 Outputs, in `build_t_embed_plus/`:
 
@@ -53,8 +58,8 @@ Outputs, in `build_t_embed_plus/`:
 | `ota_data_initial.bin` | `0xBF0000` |
 | `furi_esp32.bin` | `0x10000` |
 
-The reference build on 2026-11-14 produced a 3.08 MB `furi_esp32.bin`, half of
-a 5.94 MB app slot.
+The reference build on 2026-11-14 produced a 3.06 MB `furi_esp32.bin`
+(3,064,400 bytes), about half of a 5.94 MB app slot.
 
 Linux and macOS: the same `build.py` commands, with `ESP_IDF_DIR` pointing at
 your v5.4.1 checkout. This has not been run there yet.
@@ -113,12 +118,21 @@ Work down this list and record the result of each line in
 2. Settings → About shows the board and version.
 3. SD card mounts; the archive lists files.
 4. Sub-GHz → Read on 433.92 MHz decodes a remote or sensor you own.
-5. Sub-GHz start menu has **no** "Jammer" and **no** "Bruteforce".
-6. NRF 2.4GHz shows only "Spectrum Analyzer", and it detects the module.
-7. WiFi Lab → Scan lists networks; Status shows "WiFi is off" after leaving.
-8. Infrared learns and replays one button.
-9. NFC reads a test tag.
-10. Lock menu has no "Mesh Clients" and no "Web-Filesystem"; Settings has no
+5. Sub-GHz start menu has **no** "Jammer" and **no** "Bruteforce"; "Add
+   Manually" lists only fixed-code remotes.
+6. Sub-GHz → Radio Settings → TX Region shows "Not set". Sending any saved
+   signal is refused with "No TX region set". Choose your region; a signal
+   inside its bands now sends, one outside is refused.
+7. A saved rolling-code file opens and shows its details; Send gives "Decode
+   only".
+8. NRF 2.4GHz shows only "Spectrum Analyzer", and it detects the module.
+9. WiFi Lab → Scan lists networks; Status shows "WiFi is off" after leaving.
+10. BLE Lab → Scan lists nearby devices (with WiFi off); leaving the app
+    restores normal Bluetooth.
+11. Infrared learns and replays one button.
+12. NFC reads a test tag. The start menu has Read, Saved and Extra Actions
+    only; a saved card offers no Emulate or Write.
+13. Lock menu has no "Mesh Clients" and no "Web-Filesystem"; Settings has no
     "Update Firmware".
 
 ## 6. Updating
@@ -158,11 +172,30 @@ so a bad build cannot brick the device.
 
 ## 8. Radio rules
 
-- **You are the region control.** Sub-GHz transmit is limited to 300–350,
-  387–467.75 and 779–928 MHz, which matches the CC1101 front end, not any
-  country's rules. Check which frequencies, power and duty cycle are legal
-  where you are before transmitting. Receiving is unrestricted here but may be
+- **Set your region before transmitting.** Sub-GHz → Radio Settings → TX
+  Region. It starts as "Not set", which blocks all Sub-GHz transmit. The
+  presets are the transmission bands Flipper Devices publishes per region
+  group (`components/furi_hal/furi_hal_region_table.c`):
+
+  | Preset | Bands (MHz) |
+  | --- | --- |
+  | EU/UK/RU+ | 433.05–434.79, 868.15–868.55 |
+  | US/CA/AU+ | 304.10–321.95, 433.05–434.79, 915.00–928.00 |
+  | UAE | 420.00–440.00 |
+  | Taiwan | 304.50–321.95, 433.075–434.775, 915.00–927.95 |
+  | Singapore | 300.00–300.30, 312.00–316.00, 433.50–434.79, 444.40–444.80 |
+  | India/Israel | 433.05–434.79 |
+  | Philippines | 430.00–440.00 |
+  | China | 314.00–316.00, 430.00–432.00, 433.05–434.79 |
+  | Other | 312.00–315.25, 920.50–923.50 |
+
+  The preset limits frequency only. Power and duty-cycle limits are yours to
+  respect, and the table is a convenience, not legal advice: check the rules
+  where you are. The choice is stored in the device, not on the SD card, and
+  applies to every transmit path. Receiving is not restricted here but may be
   regulated where you live.
+- Rolling-code remotes (KeeLoq, Security+, Somfy, FAAC SLH and similar) can be
+  received and decoded but not transmitted or generated.
 - The board's band switch has three paths (315, 434, 868–915 MHz); stay near
   them for usable range.
 - The switch that widens the TX range on the SD card is ignored by this build.
@@ -174,10 +207,10 @@ so a bad build cannot brick the device.
 
 ## 9. Known limitations
 
-See "Known gaps" and "Open decisions" in `FEATURE_MATRIX.md`. In short: no
-hardware validation yet, no signed updates, no region table, no passive BLE
-tool, NFC key-attack and emulation features inherited without extra
-confirmation, and the Wi-Fi feature set is deliberately small.
+See "Known gaps" and "Still open" in `FEATURE_MATRIX.md`, and the "todo" rows
+in `MOMENTUM_PARITY.md`. In short: no hardware validation yet, no signed
+updates, region presets limit frequency but not power, the NFC app is
+read-only by design, and the Wi-Fi and BLE tools are deliberately small.
 
 ## 10. Tests
 
@@ -185,6 +218,21 @@ confirmation, and the Wi-Fi feature set is deliberately small.
 python tests/subghz_ws/run.py
 ```
 
-Runs the weather-decoder host tests (needs `gcc`, or on Windows
-`pip install ziglang==0.13.0` and `ZIG_CC` set to its `zig.exe`). Upstream's
-own offline suite is `python tests/run_t_embed_features.py`.
+```bash
+python tests/subghz_region/run.py
+```
+
+```bash
+python tests/ble_lab/run.py
+```
+
+These are the weather-decoder, region-table and BLE advertisement-parser host
+tests (they need `gcc`, or on Windows `pip install ziglang==0.13.0` and
+`ZIG_CC` set to its `zig.exe`). Upstream's own offline suite is
+`python tests/run_t_embed_features.py`.
+
+To compile every board profile the repository carries (compile check only):
+
+```bash
+python tools/tembed_plus/cross_build.py
+```

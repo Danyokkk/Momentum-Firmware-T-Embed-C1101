@@ -13,7 +13,9 @@ verifiably absent from the image; it has not been run on a device.
 
 | Document | What it answers |
 | --- | --- |
+| [REPORT.md](REPORT.md) | one-page summary: what was implemented, build and test results, what is withheld, what is not done |
 | [FEATURE_MATRIX.md](FEATURE_MATRIX.md) | what is in, what is out, and how well each item has been checked |
+| [MOMENTUM_PARITY.md](MOMENTUM_PARITY.md) | every Momentum feature category mapped to this target: present, added, todo, add-on, n/a or withheld |
 | [BOARD_PROFILE.md](BOARD_PROFILE.md) | Plus hardware, pin map, shared-bus conflicts, open hardware questions |
 | [PROVENANCE.md](PROVENANCE.md) | upstream commits reviewed, what was imported from where, licences |
 | [RELEASE_GUIDE.md](RELEASE_GUIDE.md) | build, back up, flash, SD card, update, rollback, recovery, RF rules |
@@ -33,7 +35,13 @@ verifiably absent from the image; it has not been run on a device.
    jammer and MouseJack, Sub-GHz jammer and brute-forcer, the Sub-GHz
    extended-TX switch, the unauthenticated ESP-NOW mesh, and the network
    updater that ran with TLS verification off.
-4. **Added:** 25 weather-station Sub-GHz decoders from Momentum with host
+4. **Second pass (after the parity brief):** the NFC app is read-only
+   (39 write/emulate/clone/unlock/key-attack scenes replaced by an explanation
+   screen, card emulation refused in the PN532 driver); rolling-code Sub-GHz
+   protocols are decode-only (no encoder can be created); Sub-GHz transmit
+   needs a region preset and is off until one is chosen; a passive BLE scanner
+   (`ble_lab`) was added.
+5. **Added:** 25 weather-station Sub-GHz decoders from Momentum with host
    tests; a small passive Wi-Fi tool (`wifi_lab`); passive scanning in the
    Wi-Fi HAL; TLS verification on; OTA rollback; a pinned build wrapper, an
    image checker and an SD bundle tool under `tools/tembed_plus/`.
@@ -63,10 +71,11 @@ The board is chosen with `-DFLIPPER_BOARD=lilygo_t_embed_cc1101`, which selects
 | --- | --- |
 | Firmware build, ESP-IDF v5.4.1, Windows 11 | passes; see `RELEASE_GUIDE.md` for the image size |
 | `check_lab_exclusions.py` on the linked ELF | passes: no excluded app, source or symbol; `esp_wifi_80211_tx` and `esp_now_init` are not linked |
-| `tests/subghz_ws/run.py` | passes: 548 checks (Windows build, so without ASan/UBSan) |
+| `tests/subghz_ws/run.py` | passes: 2130 checks (Windows build, so without ASan/UBSan) |
+| `tests/subghz_region/run.py`, `tests/ble_lab/run.py` | pass: 212 and 29 checks |
 | SDK blob hash after the build | unchanged |
 | Upstream's suite `tests/run_t_embed_features.py` | 7 of its checks fail, **identically on an untouched checkout of the base commit and on this branch** (run side by side on Windows with Zig), so this branch adds no failures there. Examples: `run_radio_lifecycle_tests.py` looks for a function (`survey_restore_owned`) that is not in `wlan_hal.c`; `bw16_i2c_app/run.py` has stale hashes for four files; `plus_sd_recovery/hal_run.py` does not compile against its own stubs |
-| Other boards (Waveshare C6, Fatal Core, …) | not built on this branch; the lab profile applies to them too and may need per-board fixes |
+| Other boards | 9 of the 10 other profiles compile, link and pass the image check; thormini fails to link on upstream breakage. Table in `REPORT.md`. None was run |
 | Anything on a physical T-Embed | not done |
 
 ## Things worth telling upstream
@@ -79,4 +88,15 @@ The board is chosen with `-DFLIPPER_BOARD=lilygo_t_embed_cc1101`, which selects
 - The `subghz_load_dangerous_settings` manifest had no `sources`, so its target
   compiled the whole Sub-GHz app a second time.
 - `solight_te44.c` battery-flag precedence bug (also in Momentum).
+- Momentum weather decoders: `lacrosse_tx.c` calls `furi_crash()` on a received
+  frame with an unknown type; `lacrosse_tx.c` and `emos_e601x.c` refuse the key
+  files they save; `auriol_ahfl.c` compares a 6-bit checksum unmasked. More in
+  `tests/subghz_ws/README.md`.
+- Thormini: `components/gui/CMakeLists.txt` pointed at a file in the wrong
+  folder, and the board still fails to link on two missing functions.
+- Building an ESP32-C6 board from the same tree makes the component manager
+  rewrite `dependencies.lock` (it re-solved TinyUSB from 0.21.0~4 to ~6), so
+  later ESP32-S3 builds are no longer pinned. Per-target lock files avoid it.
+- `subghz_txrx_tx_start()` frees a NULL transmitter (which asserts) when a
+  protocol has no encoder.
 - The two stale tests above.
