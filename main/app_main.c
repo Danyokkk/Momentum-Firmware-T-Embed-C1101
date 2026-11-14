@@ -6,8 +6,44 @@
 #include <esp_log.h>
 #include <esp_rom_uart.h>
 #include <esp_system.h>
+#include <esp_ota_ops.h>
+#include <esp_timer.h>
 
 static const char* TAG = "Main";
+
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+/* OTA rollback. After an update the bootloader starts the new image in the
+ * "pending verify" state. Unless the image confirms itself, the next reset
+ * boots the previous image again. Confirmation is deferred until the system
+ * has stayed up for a while, so an image that crashes or hangs during start-up
+ * is rolled back automatically. Images flashed over USB are not in that state
+ * and the call is then a no-op. */
+#define OTA_CONFIRM_AFTER_US (20 * 1000 * 1000)
+
+static void ota_confirm_timer_cb(void* arg) {
+    (void)arg;
+    esp_ota_img_states_t state = ESP_OTA_IMG_UNDEFINED;
+    const esp_partition_t* running = esp_ota_get_running_partition();
+    if(running && esp_ota_get_state_partition(running, &state) == ESP_OK &&
+       state == ESP_OTA_IMG_PENDING_VERIFY) {
+        esp_err_t err = esp_ota_mark_app_valid_cancel_rollback();
+        ESP_LOGI(TAG, "OTA image confirmed after start-up: %s", esp_err_to_name(err));
+    }
+}
+
+static void ota_confirm_schedule(void) {
+    const esp_timer_create_args_t args = {
+        .callback = ota_confirm_timer_cb,
+        .name = "ota_confirm",
+    };
+    esp_timer_handle_t timer = NULL;
+    if(esp_timer_create(&args, &timer) != ESP_OK ||
+       esp_timer_start_once(timer, OTA_CONFIRM_AFTER_US) != ESP_OK) {
+        /* Never leave a healthy image unconfirmed because a timer failed. */
+        esp_ota_mark_app_valid_cancel_rollback();
+    }
+}
+#endif
 
 static void log_internal_registry(
     const char* label,
@@ -174,6 +210,10 @@ void app_main(void) {
     for(size_t i = 0; i < FLIPPER_ON_SYSTEM_START_COUNT; i++) {
         FLIPPER_ON_SYSTEM_START[i]();
     }
+
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+    ota_confirm_schedule();
+#endif
 
     ESP_LOGI(TAG, "All services started, entering background...");
 
