@@ -1,0 +1,10 @@
+App(
+    appid="wifi_lab",
+    name="WiFi Lab",
+    apptype=FlipperAppType.MENUEXTERNAL,
+    entry_point="wifi_lab_app",
+    requires=["gui", "storage", "wifi"],
+    stack_size=4 * 1024,
+    icon="A_Sub1ghz_14",
+    order=67,
+)
