@@ -781,6 +781,17 @@ FuriHalNfcEvent furi_hal_nfc_listener_wait_event(uint32_t timeout_ms) {
         return pn532_type4_ndef_emulate();
     }
 
+#ifdef FURI_PROFILE_LAB
+    /* Lab profile: the reader never presents itself as somebody's card. The
+     * raw ISO14443-A target path below (TgInitAsTarget with a caller-supplied
+     * UID/ATQA/SAK) is what card emulation and cloning are built on, so it is
+     * never entered, for any caller including external apps. The NDEF path
+     * above only serves a URL/text record from memory under a fixed
+     * identity and is left available. */
+    furi_delay_ms(timeout_ms < PN532_LISTENER_POLL_MS ? timeout_ms : PN532_LISTENER_POLL_MS);
+    return FuriHalNfcEventTimeout;
+#endif
+
     if(!listener_activated && listener_configured) {
         /* TgInitAsTarget: wait for a reader to activate us. We poll in short
          * slices so an abort from the UI thread (Side button → nfc_stop →

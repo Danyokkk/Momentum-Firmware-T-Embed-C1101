@@ -518,6 +518,14 @@ int32_t nfc_app(void* p) {
     const char* args = p;
 
     if(args && strlen(args)) {
+#ifdef FURI_PROFILE_LAB
+        /* The RPC entry point exists to emulate a card on request from a host.
+         * Not part of a read-only build: decline and exit. */
+        if(strncmp(args, "RPC", 3) == 0) {
+            nfc_app_free(nfc);
+            return 0;
+        }
+#endif
         if(sscanf(args, "RPC %p", &nfc->rpc_ctx) == 1) {
             rpc_system_app_set_callback(nfc->rpc_ctx, nfc_app_rpc_command_callback, nfc);
             rpc_system_app_send_started(nfc->rpc_ctx);

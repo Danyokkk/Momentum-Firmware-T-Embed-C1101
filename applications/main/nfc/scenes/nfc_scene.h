@@ -27,3 +27,9 @@ extern const SceneManagerHandlers nfc_scene_handlers;
 #define ADD_SCENE(prefix, name, id) void prefix##_scene_##name##_on_exit(void* context);
 #include "nfc_scene_config.h"
 #undef ADD_SCENE
+
+#ifdef FURI_PROFILE_LAB
+void nfc_scene_lab_blocked_on_enter(void* context);
+bool nfc_scene_lab_blocked_on_event(void* context, SceneManagerEvent event);
+void nfc_scene_lab_blocked_on_exit(void* context);
+#endif

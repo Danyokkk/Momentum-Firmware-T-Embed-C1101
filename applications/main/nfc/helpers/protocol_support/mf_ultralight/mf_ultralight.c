@@ -187,8 +187,14 @@ bool nfc_scene_read_on_event_mf_ultralight(NfcApp* instance, SceneManagerEvent e
         } else if(event.event == NfcCustomEventPollerIncomplete) {
             const MfUltralightData* data =
                 nfc_device_get_data(instance->nfc_device, NfcProtocolMfUltralight);
+#ifdef FURI_PROFILE_LAB
+            /* No Ultralight C key search in this build: always take the
+             * partial-read branch below. */
+            if(false) {
+#else
             if(data->type == MfUltralightTypeMfulC &&
                instance->mf_ul_auth->type == MfUltralightAuthTypeNone) {
+#endif
                 // Start dict attack for MFUL C cards only if no specific auth was attempted
                 scene_manager_next_scene(instance->scene_manager, NfcSceneMfUltralightCDictAttack);
             } else {

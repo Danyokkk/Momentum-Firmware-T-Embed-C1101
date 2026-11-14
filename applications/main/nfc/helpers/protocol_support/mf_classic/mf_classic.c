@@ -105,7 +105,13 @@ static void nfc_scene_read_on_enter_mf_classic(NfcApp* instance) {
 static bool nfc_scene_read_on_event_mf_classic(NfcApp* instance, SceneManagerEvent event) {
     if(event.type == SceneManagerEventTypeCustom &&
        event.event == NfcCustomEventPollerIncomplete) {
+#ifdef FURI_PROFILE_LAB
+        /* No key search in this build: show what was identified (type, UID and
+         * any sectors readable with keys already known for this card). */
+        scene_manager_next_scene(instance->scene_manager, NfcSceneReadSuccess);
+#else
         scene_manager_next_scene(instance->scene_manager, NfcSceneMfClassicDictAttack);
+#endif
     }
 
     return true;

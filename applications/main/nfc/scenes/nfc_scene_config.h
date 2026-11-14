@@ -1,3 +1,13 @@
+/* ADD_SCENE_GATED marks scenes that only exist outside the lab profile:
+ * writing, emulation, cloning, unlocking and key recovery. Scene ids stay the
+ * same in every build. In the lab profile nfc_scene.c points their handlers at
+ * the shared "not in this build" scene (nfc_scene_lab_blocked.c) and their
+ * source files are not compiled (fam_config.py, LAB_EXCLUDED_SOURCES). */
+#ifndef ADD_SCENE_GATED
+#define ADD_SCENE_GATED(prefix, name, id) ADD_SCENE(prefix, name, id)
+#define NFC_SCENE_GATED_IS_DEFAULT
+#endif
+
 ADD_SCENE(nfc, start, Start)
 ADD_SCENE(nfc, file_select, FileSelect)
 ADD_SCENE(nfc, saved_menu, SavedMenu)
@@ -17,62 +27,67 @@ ADD_SCENE(nfc, select_protocol, SelectProtocol)
 ADD_SCENE(nfc, extra_actions, ExtraActions)
 ADD_SCENE(nfc, read_success, ReadSuccess)
 ADD_SCENE(nfc, read_menu, ReadMenu)
-ADD_SCENE(nfc, emulate, Emulate)
-ADD_SCENE(nfc, write, Write)
-ADD_SCENE(nfc, rpc, Rpc)
+ADD_SCENE_GATED(nfc, emulate, Emulate)
+ADD_SCENE_GATED(nfc, write, Write)
+ADD_SCENE_GATED(nfc, rpc, Rpc)
 ADD_SCENE(nfc, debug, Debug)
 ADD_SCENE(nfc, field, Field)
 ADD_SCENE(nfc, retry_confirm, RetryConfirm)
 ADD_SCENE(nfc, exit_confirm, ExitConfirm)
 ADD_SCENE(nfc, save_confirm, SaveConfirm)
 
-ADD_SCENE(nfc, mf_ultralight_c_dict_attack, MfUltralightCDictAttack)
-ADD_SCENE(nfc, mf_ultralight_unlock_menu, MfUltralightUnlockMenu)
-ADD_SCENE(nfc, mf_ultralight_unlock_warn, MfUltralightUnlockWarn)
-ADD_SCENE(nfc, mf_ultralight_key_input, MfUltralightKeyInput)
-ADD_SCENE(nfc, mf_ultralight_capture_pass, MfUltralightCapturePass)
-ADD_SCENE(nfc, des_auth_key_input, DesAuthKeyInput)
-ADD_SCENE(nfc, des_auth_unlock_warn, DesAuthUnlockWarn)
+ADD_SCENE_GATED(nfc, mf_ultralight_c_dict_attack, MfUltralightCDictAttack)
+ADD_SCENE_GATED(nfc, mf_ultralight_unlock_menu, MfUltralightUnlockMenu)
+ADD_SCENE_GATED(nfc, mf_ultralight_unlock_warn, MfUltralightUnlockWarn)
+ADD_SCENE_GATED(nfc, mf_ultralight_key_input, MfUltralightKeyInput)
+ADD_SCENE_GATED(nfc, mf_ultralight_capture_pass, MfUltralightCapturePass)
+ADD_SCENE_GATED(nfc, des_auth_key_input, DesAuthKeyInput)
+ADD_SCENE_GATED(nfc, des_auth_unlock_warn, DesAuthUnlockWarn)
 
 ADD_SCENE(nfc, mf_desfire_more_info, MfDesfireMoreInfo)
 ADD_SCENE(nfc, mf_desfire_app, MfDesfireApp)
 
 ADD_SCENE(nfc, emv_transactions, EmvTransactions)
 
-ADD_SCENE(nfc, mf_classic_dict_attack, MfClassicDictAttack)
-ADD_SCENE(nfc, mf_classic_detect_reader, MfClassicDetectReader)
-ADD_SCENE(nfc, mf_classic_mfkey_nonces_info, MfClassicMfkeyNoncesInfo)
-ADD_SCENE(nfc, mf_classic_mfkey_complete, MfClassicMfkeyComplete)
-ADD_SCENE(nfc, mf_classic_update_initial, MfClassicUpdateInitial)
-ADD_SCENE(nfc, mf_classic_update_initial_success, MfClassicUpdateInitialSuccess)
-ADD_SCENE(nfc, mf_classic_update_initial_wrong_card, MfClassicUpdateInitialWrongCard)
-ADD_SCENE(nfc, mf_classic_show_keys, MfClassicShowKeys)
+ADD_SCENE_GATED(nfc, mf_classic_dict_attack, MfClassicDictAttack)
+ADD_SCENE_GATED(nfc, mf_classic_detect_reader, MfClassicDetectReader)
+ADD_SCENE_GATED(nfc, mf_classic_mfkey_nonces_info, MfClassicMfkeyNoncesInfo)
+ADD_SCENE_GATED(nfc, mf_classic_mfkey_complete, MfClassicMfkeyComplete)
+ADD_SCENE_GATED(nfc, mf_classic_update_initial, MfClassicUpdateInitial)
+ADD_SCENE_GATED(nfc, mf_classic_update_initial_success, MfClassicUpdateInitialSuccess)
+ADD_SCENE_GATED(nfc, mf_classic_update_initial_wrong_card, MfClassicUpdateInitialWrongCard)
+ADD_SCENE_GATED(nfc, mf_classic_show_keys, MfClassicShowKeys)
 
-ADD_SCENE(nfc, mf_classic_keys, MfClassicKeys)
-ADD_SCENE(nfc, mf_classic_keys_list, MfClassicKeysList)
-ADD_SCENE(nfc, mf_classic_keys_delete, MfClassicKeysDelete)
-ADD_SCENE(nfc, mf_classic_keys_add, MfClassicKeysAdd)
-ADD_SCENE(nfc, mf_classic_keys_warn_duplicate, MfClassicKeysWarnDuplicate)
+ADD_SCENE_GATED(nfc, mf_classic_keys, MfClassicKeys)
+ADD_SCENE_GATED(nfc, mf_classic_keys_list, MfClassicKeysList)
+ADD_SCENE_GATED(nfc, mf_classic_keys_delete, MfClassicKeysDelete)
+ADD_SCENE_GATED(nfc, mf_classic_keys_add, MfClassicKeysAdd)
+ADD_SCENE_GATED(nfc, mf_classic_keys_warn_duplicate, MfClassicKeysWarnDuplicate)
 
-ADD_SCENE(nfc, mf_ultralight_c_keys, MfUltralightCKeys)
-ADD_SCENE(nfc, mf_ultralight_c_keys_list, MfUltralightCKeysList)
-ADD_SCENE(nfc, mf_ultralight_c_keys_delete, MfUltralightCKeysDelete)
-ADD_SCENE(nfc, mf_ultralight_c_keys_add, MfUltralightCKeysAdd)
-ADD_SCENE(nfc, mf_ultralight_c_keys_warn_duplicate, MfUltralightCKeysWarnDuplicate)
+ADD_SCENE_GATED(nfc, mf_ultralight_c_keys, MfUltralightCKeys)
+ADD_SCENE_GATED(nfc, mf_ultralight_c_keys_list, MfUltralightCKeysList)
+ADD_SCENE_GATED(nfc, mf_ultralight_c_keys_delete, MfUltralightCKeysDelete)
+ADD_SCENE_GATED(nfc, mf_ultralight_c_keys_add, MfUltralightCKeysAdd)
+ADD_SCENE_GATED(nfc, mf_ultralight_c_keys_warn_duplicate, MfUltralightCKeysWarnDuplicate)
 
-ADD_SCENE(nfc, set_type, SetType)
-ADD_SCENE(nfc, set_sak, SetSak)
-ADD_SCENE(nfc, set_atqa, SetAtqa)
-ADD_SCENE(nfc, set_uid, SetUid)
+ADD_SCENE_GATED(nfc, set_type, SetType)
+ADD_SCENE_GATED(nfc, set_sak, SetSak)
+ADD_SCENE_GATED(nfc, set_atqa, SetAtqa)
+ADD_SCENE_GATED(nfc, set_uid, SetUid)
 
-ADD_SCENE(nfc, slix_unlock_menu, SlixUnlockMenu)
-ADD_SCENE(nfc, slix_key_input, SlixKeyInput)
-ADD_SCENE(nfc, slix_unlock, SlixUnlock)
-ADD_SCENE(nfc, slix_unlock_success, SlixUnlockSuccess)
+ADD_SCENE_GATED(nfc, slix_unlock_menu, SlixUnlockMenu)
+ADD_SCENE_GATED(nfc, slix_key_input, SlixKeyInput)
+ADD_SCENE_GATED(nfc, slix_unlock, SlixUnlock)
+ADD_SCENE_GATED(nfc, slix_unlock_success, SlixUnlockSuccess)
 
 ADD_SCENE(nfc, felica_more_info, FelicaMoreInfo)
 ADD_SCENE(nfc, felica_system, FelicaSystem)
 
-ADD_SCENE(nfc, generate_info, GenerateInfo)
-ADD_SCENE(nfc, chameleon_wipe, ChameleonWipe)
-ADD_SCENE(nfc, clone_place_blank, ClonePlaceBlank)
+ADD_SCENE_GATED(nfc, generate_info, GenerateInfo)
+ADD_SCENE_GATED(nfc, chameleon_wipe, ChameleonWipe)
+ADD_SCENE_GATED(nfc, clone_place_blank, ClonePlaceBlank)
+
+#ifdef NFC_SCENE_GATED_IS_DEFAULT
+#undef ADD_SCENE_GATED
+#undef NFC_SCENE_GATED_IS_DEFAULT
+#endif

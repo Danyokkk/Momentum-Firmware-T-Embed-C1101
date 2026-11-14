@@ -44,6 +44,14 @@ DENY_SYMBOLS = [
     (r"^ble_spam\w*$", "BLE advertisement spam"),
     (r"^bad_usb\w*$|^ducky_\w+$", "scripted keystroke injection"),
     (r"^js_blebeacon\w*$", "scripted BLE advertising"),
+    # NFC is read-only: the scenes that drive these are replaced, not built.
+    (r"^nfc_scene_(mf_classic_dict_attack|mf_ultralight_c_dict_attack|mf_classic_detect_reader|"
+     r"mf_classic_mfkey_\w+)_on_(enter|event|exit)$", "NFC key recovery (dictionary attack / mfkey)"),
+    (r"^nfc_scene_(slix_unlock\w*|slix_key_input|mf_ultralight_unlock_\w+|mf_ultralight_key_input|"
+     r"mf_ultralight_capture_pass|des_auth_\w+)_on_(enter|event|exit)$", "NFC password/key unlock"),
+    (r"^nfc_scene_(emulate|write|rpc|clone_place_blank|chameleon_wipe|mf_classic_update_initial\w*|"
+     r"set_type|set_uid|set_sak|set_atqa|generate_info)_on_(enter|event|exit)$",
+     "NFC emulate / write / clone scenes"),
     # SDK entry points that only the excluded features reach. Their absence from
     # the image is the strongest evidence: the capability is not linked at all.
     (r"^esp_wifi_80211_tx$", "raw 802.11 transmit (SDK)"),

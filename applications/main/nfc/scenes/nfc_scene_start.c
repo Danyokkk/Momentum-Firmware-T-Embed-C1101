@@ -31,6 +31,8 @@ void nfc_scene_start_on_enter(void* context) {
     nfc->clone_mode = false;
 
     submenu_add_item(submenu, "Read", SubmenuIndexRead, nfc_scene_start_submenu_callback, nfc);
+    /* Lab profile: read-only. No Clone, key extraction or manual card creation. */
+#ifndef FURI_PROFILE_LAB
     submenu_add_item(submenu, "Clone", SubmenuIndexClone, nfc_scene_start_submenu_callback, nfc);
     submenu_add_item(
         submenu,
@@ -38,11 +40,14 @@ void nfc_scene_start_on_enter(void* context) {
         SubmenuIndexDetectReader,
         nfc_scene_start_submenu_callback,
         nfc);
+#endif /* !FURI_PROFILE_LAB */
     submenu_add_item(submenu, "Saved", SubmenuIndexSaved, nfc_scene_start_submenu_callback, nfc);
     submenu_add_item(
         submenu, "Extra Actions", SubmenuIndexExtraAction, nfc_scene_start_submenu_callback, nfc);
+#ifndef FURI_PROFILE_LAB
     submenu_add_item(
         submenu, "Add Manually", SubmenuIndexAddManually, nfc_scene_start_submenu_callback, nfc);
+#endif /* !FURI_PROFILE_LAB */
 
     if(furi_hal_rtc_is_flag_set(FuriHalRtcFlagDebug)) {
         submenu_add_item(

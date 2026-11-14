@@ -24,6 +24,8 @@ void nfc_scene_extra_actions_on_enter(void* context) {
         SubmenuIndexReadCardType,
         nfc_scene_extra_actions_submenu_callback,
         instance);
+    /* Lab profile: key management and unlock tools are not offered. */
+#ifndef FURI_PROFILE_LAB
     submenu_add_item(
         submenu,
         "MIFARE Classic Keys",
@@ -48,6 +50,7 @@ void nfc_scene_extra_actions_on_enter(void* context) {
         SubmenuIndexSlixUnlock,
         nfc_scene_extra_actions_submenu_callback,
         instance);
+#endif /* !FURI_PROFILE_LAB */
     submenu_set_selected_item(
         submenu, scene_manager_get_scene_state(instance->scene_manager, NfcSceneExtraActions));
     view_dispatcher_switch_to_view(instance->view_dispatcher, NfcViewMenu);

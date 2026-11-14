@@ -243,6 +243,13 @@ bool nfc_protocol_support_has_feature(
     furi_assert(context);
 
     NfcApp* instance = context;
+#ifdef FURI_PROFILE_LAB
+    /* Read-only build: no protocol offers emulation, UID editing or writing,
+     * whatever its support table says. This hides the menu entries and keeps
+     * a saved file from opening straight into emulation. */
+    feature &= ~(NfcProtocolFeatureEmulateUid | NfcProtocolFeatureEmulateFull |
+                 NfcProtocolFeatureEditUid | NfcProtocolFeatureWrite);
+#endif
     return nfc_protocol_support_get(protocol, instance)->features & feature;
 }
 
