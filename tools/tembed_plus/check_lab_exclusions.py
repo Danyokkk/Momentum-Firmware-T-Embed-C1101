@@ -67,25 +67,35 @@ SDKCONFIG_EXPECT = {
 }
 
 
-def find_nm() -> str | None:
-    for name in ("xtensa-esp32s3-elf-nm", "xtensa-esp-elf-nm"):
+def find_nm(riscv: bool) -> str | None:
+    names = (
+        ("riscv32-esp-elf-nm",)
+        if riscv
+        else ("xtensa-esp32s3-elf-nm", "xtensa-esp-elf-nm")
+    )
+    for name in names:
         found = shutil.which(name)
         if found:
             return found
-    roots = [Path(r"C:\Espressif\tools\tools"), Path.home() / ".espressif" / "tools"]
+    roots = [Path("C:/Espressif/tools/tools"), Path.home() / ".espressif" / "tools"]
     if os.environ.get("IDF_TOOLS_PATH"):
         roots.insert(0, Path(os.environ["IDF_TOOLS_PATH"]) / "tools")
+    pattern = (
+        "riscv32-esp-elf/*/riscv32-esp-elf/bin/riscv32-esp-elf-nm*"
+        if riscv
+        else "xtensa-esp-elf/*/xtensa-esp-elf/bin/xtensa-esp32s3-elf-nm*"
+    )
     for root in roots:
-        matches = sorted(root.glob("xtensa-esp-elf/*/xtensa-esp-elf/bin/xtensa-esp32s3-elf-nm*"))
+        matches = sorted(root.glob(pattern))
         if matches:
             return str(matches[-1])
     return None
 
 
-def defined_symbols(elf: Path) -> set[str]:
-    nm = find_nm()
+def defined_symbols(elf: Path, riscv: bool) -> set[str]:
+    nm = find_nm(riscv)
     if not nm:
-        sys.exit("check_lab_exclusions: xtensa-esp32s3-elf-nm not found (add the toolchain to PATH)")
+        sys.exit("check_lab_exclusions: toolchain nm not found (add the toolchain to PATH)")
     output = subprocess.run(
         [nm, "--defined-only", str(elf)], capture_output=True, text=True, check=True
     ).stdout
@@ -101,6 +111,11 @@ def defined_symbols(elf: Path) -> set[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--build-dir", required=True)
+    parser.add_argument(
+        "--no-sdkconfig",
+        action="store_true",
+        help="skip the sdkconfig expectations (they describe the T-Embed Plus defaults)",
+    )
     args = parser.parse_args()
     build = Path(args.build_dir).resolve()
     failures: list[str] = []
@@ -151,7 +166,13 @@ def main() -> int:
     if not elf.is_file():
         failures.append(f"missing {elf} (build first)")
     else:
-        symbols = defined_symbols(elf)
+        config_text = (
+            (build / "sdkconfig").read_text(encoding="utf-8", errors="replace")
+            if (build / "sdkconfig").is_file()
+            else ""
+        )
+        riscv = re.search(r'^CONFIG_IDF_TARGET_ARCH_RISCV=y$', config_text, re.MULTILINE) is not None
+        symbols = defined_symbols(elf, riscv)
         checked_symbols = len(symbols)
         for pattern, meaning in DENY_SYMBOLS:
             regex = re.compile(pattern)
@@ -162,7 +183,9 @@ def main() -> int:
 
     # 4. sdkconfig
     sdkconfig = build / "sdkconfig"
-    if not sdkconfig.is_file():
+    if args.no_sdkconfig:
+        pass
+    elif not sdkconfig.is_file():
         failures.append(f"missing {sdkconfig}")
     else:
         text = sdkconfig.read_text(encoding="utf-8", errors="replace")

@@ -44,3 +44,6 @@ releases/*.zip
 
 # tools/tembed_plus/make_sd_bundle.py output
 dist/
+
+# tools/tembed_plus/cross_build.py output
+/cross_build_results.json
