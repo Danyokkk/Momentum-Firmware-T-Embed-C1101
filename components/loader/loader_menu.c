@@ -423,6 +423,11 @@ static void
     }
 }
 
+/* Lab profile: the network updater lived in the removed WiFi app. It fetched
+ * images from the upstream author's release site with TLS verification
+ * disabled and no signature check, so it is not offered here. Update over USB
+ * (docs/tembed-plus/RELEASE_GUIDE.md). */
+#ifndef FURI_PROFILE_LAB
 static void loader_menu_update_fw_callback(void* context, uint32_t index) {
     UNUSED(context);
     UNUSED(index);
@@ -433,6 +438,7 @@ static void loader_menu_update_fw_callback(void* context, uint32_t index) {
     loader_start_detached_with_gui_error(loader, "wlan", "update");
     furi_record_close(RECORD_LOADER);
 }
+#endif /* !FURI_PROFILE_LAB */
 
 static void loader_menu_settings_interface_callback(void* context, uint32_t index) {
     UNUSED(index);
@@ -449,6 +455,7 @@ static void loader_menu_build_submenu(LoaderMenuApp* app) {
             (uint32_t)FLIPPER_EXTSETTINGS_APPS[i].path,
             loader_menu_settings_menu_callback,
             app);
+#ifndef FURI_PROFILE_LAB
         /* "Update Firmware" direkt nach "About" einfügen (vor "Bluetooth"). */
         if(strcmp(FLIPPER_EXTSETTINGS_APPS[i].path, "about") == 0) {
             submenu_add_item(
@@ -458,6 +465,7 @@ static void loader_menu_build_submenu(LoaderMenuApp* app) {
                 loader_menu_update_fw_callback,
                 app);
         }
+#endif /* !FURI_PROFILE_LAB */
     }
     for(size_t i = 0; i < FLIPPER_SETTINGS_APPS_COUNT; i++) {
         /* "Interface" is handled by our own Interface submenu below - skip the

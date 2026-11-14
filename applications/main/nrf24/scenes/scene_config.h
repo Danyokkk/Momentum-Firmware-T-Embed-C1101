@@ -1,5 +1,6 @@
 ADD_SCENE(nrf24_app, menu, Menu)
 ADD_SCENE(nrf24_app, spectrum, Spectrum)
+#ifndef FURI_PROFILE_LAB
 ADD_SCENE(nrf24_app, jam, Jam)
 ADD_SCENE(nrf24_app, jam_wifi_scan, JamWifiScan)
 ADD_SCENE(nrf24_app, jam_activity_scan, JamActivityScan)
@@ -10,3 +11,4 @@ ADD_SCENE(nrf24_app, mj_target_list, MjTargetList)
 ADD_SCENE(nrf24_app, mj_script_select, MjScriptSelect)
 ADD_SCENE(nrf24_app, mj_attack, MjAttack)
 ADD_SCENE(nrf24_app, mj_auto, MjAuto)
+#endif /* !FURI_PROFILE_LAB */

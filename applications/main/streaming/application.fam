@@ -4,6 +4,14 @@ App(
     apptype=FlipperAppType.MENUEXTERNAL,
     entry_point="streaming_app",
     requires=["gui", "wifi"],
+    # The device-scan scene reuses a list view that lives in the WiFi app's
+    # directory. That app is not built in this fork, so the two GUI-only files
+    # (canvas drawing and input handling, no radio code) are compiled here.
+    sources=[
+        "*.c*",
+        "../wlan_app/views/wlan_lan_view.c",
+        "../wlan_app/views/wlan_view_common.c",
+    ],
     stack_size=16 * 1024,
     order=84,
     icon="A_Streaming_14",

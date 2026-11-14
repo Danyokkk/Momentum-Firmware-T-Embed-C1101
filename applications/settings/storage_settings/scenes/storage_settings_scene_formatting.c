@@ -59,6 +59,15 @@ void storage_settings_scene_formatting_on_enter(void* context) {
         notification_message(notification, &sequence_success);
         furi_record_close(RECORD_NOTIFICATION);
 
+#ifdef FURI_PROFILE_LAB
+        /* No network SD/firmware fetch in the lab profile: just report success.
+         * SD content comes from the bundle built by tools/tembed_plus. */
+        dialog_ex_set_icon(dialog_ex, 0, 0, NULL);
+        dialog_ex_set_header(dialog_ex, "SD Card Formatted", 64, 10, AlignCenter, AlignCenter);
+        dialog_ex_set_text(
+            dialog_ex, "Copy the SD bundle\nfrom your computer", 64, 32, AlignCenter, AlignCenter);
+        dialog_ex_set_left_button_text(dialog_ex, "Finish");
+#else
         /* Karte ist frisch formatiert und leer -> anbieten, Firmware-/SD-Files
          * ueber die WiFi-App nachzuladen. Yes -> Update-Flow, No -> zurueck. */
         dialog_ex_set_icon(dialog_ex, 0, 0, NULL);
@@ -73,6 +82,7 @@ void storage_settings_scene_formatting_on_enter(void* context) {
             AlignTop);
         dialog_ex_set_left_button_text(dialog_ex, "No");
         dialog_ex_set_right_button_text(dialog_ex, "Yes");
+#endif /* FURI_PROFILE_LAB */
     }
 }
 
@@ -92,6 +102,7 @@ bool storage_settings_scene_formatting_on_event(void* context, SceneManagerEvent
                     app->scene_manager, StorageSettingsStart);
             }
             break;
+#ifndef FURI_PROFILE_LAB
         case DialogExResultRight: {
             /* "Yes": in den kombinierten Firmware-/SD-Update-Flow der WiFi-App
              * springen (Launch-Arg "update"), gleiches Muster wie der
@@ -106,6 +117,7 @@ bool storage_settings_scene_formatting_on_event(void* context, SceneManagerEvent
             consumed = true;
             break;
         }
+#endif /* !FURI_PROFILE_LAB */
         }
     } else if(event.type == SceneManagerEventTypeBack) {
         consumed = true;

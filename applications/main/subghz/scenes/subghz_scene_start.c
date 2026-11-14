@@ -86,6 +86,7 @@ void subghz_scene_start_on_enter(void* context) {
         SubmenuIndexPlaylist,
         subghz_scene_start_submenu_callback,
         subghz);
+#ifndef FURI_PROFILE_LAB
     submenu_add_item(
         subghz->submenu,
         "Jammer",
@@ -98,6 +99,7 @@ void subghz_scene_start_on_enter(void* context) {
         SubmenuIndexBruteforce,
         subghz_scene_start_submenu_callback,
         subghz);
+#endif /* !FURI_PROFILE_LAB */
     submenu_add_item(
         subghz->submenu, "Saved", SubmenuIndexSaved, subghz_scene_start_submenu_callback, subghz);
     submenu_add_item(
@@ -179,6 +181,7 @@ bool subghz_scene_start_on_event(void* context, SceneManagerEvent event) {
                 subghz->scene_manager, SubGhzSceneStart, SubmenuIndexPlaylist);
             scene_manager_next_scene(subghz->scene_manager, SubGhzScenePlaylist);
             return true;
+#ifndef FURI_PROFILE_LAB
         } else if(event.event == SubmenuIndexJammer) {
             scene_manager_set_scene_state(
                 subghz->scene_manager, SubGhzSceneStart, SubmenuIndexJammer);
@@ -189,6 +192,7 @@ bool subghz_scene_start_on_event(void* context, SceneManagerEvent event) {
                 subghz->scene_manager, SubGhzSceneStart, SubmenuIndexBruteforce);
             scene_manager_next_scene(subghz->scene_manager, SubGhzSceneBfStart);
             return true;
+#endif /* !FURI_PROFILE_LAB */
         } else if(event.event == SubmenuIndexSaved) {
             scene_manager_set_scene_state(
                 subghz->scene_manager, SubGhzSceneStart, SubmenuIndexSaved);

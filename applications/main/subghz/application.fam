@@ -36,5 +36,8 @@ App(
     apptype=FlipperAppType.STARTUP,
     entry_point="subghz_dangerous_freq",
     requires=["storage", "subghz"],
+    # Only the hook itself: the default "*.c*" glob made this target compile the
+    # whole Sub-GHz app a second time.
+    sources=["subghz_dangerous_freq.c"],
     order=650,
 )

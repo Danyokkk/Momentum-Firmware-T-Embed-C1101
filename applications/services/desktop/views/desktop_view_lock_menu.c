@@ -52,6 +52,10 @@ static void lock_menu_build_items(bool usb_available, bool qflipper_on, bool bt_
         s_items[s_item_count++] = (LockMenuItem){"USB-Storage", DesktopLockMenuEventUsbStorage};
     }
 
+    /* Lab profile: no Web-Filesystem (it lived in the removed WiFi app) and no
+     * Mesh Clients (the ESP-NOW buddy link is unencrypted and unauthenticated;
+     * see docs/tembed-plus/FEATURE_MATRIX.md). */
+#ifndef FURI_PROFILE_LAB
     /* Web-Filesystem: SoftAP + HTTP file server for the SD; board-independent
      * (WiFi is on every target). */
     s_items[s_item_count++] = (LockMenuItem){"Web-Filesystem", DesktopLockMenuEventWebFs};
@@ -59,6 +63,7 @@ static void lock_menu_build_items(bool usb_available, bool qflipper_on, bool bt_
     /* Mesh: der T-Embed ist immer Master — kein Mode-Toggle, "Mesh Clients"
      * (Discovery/Pair) ist immer verfügbar. */
     s_items[s_item_count++] = (LockMenuItem){"Mesh Clients", DesktopLockMenuEventMeshClients};
+#endif /* !FURI_PROFILE_LAB */
 }
 
 void desktop_lock_menu_set_callback(

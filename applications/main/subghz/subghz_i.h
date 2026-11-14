@@ -9,15 +9,19 @@
 #include "views/subghz_frequency_analyzer.h"
 #include "views/subghz_spectrum.h"
 #include "views/subghz_read_raw.h"
-#include "views/subghz_jammer.h"
 #include "views/subghz_playlist.h"
+#include "views/subghz_view_tpms_info.h"
+/* Lab profile: the jammer and the code brute-forcer are not built
+ * (fam_config.py, LAB_EXCLUDED_SOURCES). */
+#ifndef FURI_PROFILE_LAB
+#include "views/subghz_jammer.h"
 #include "views/subbrute_main_view.h"
 #include "views/subbrute_attack_view.h"
-#include "views/subghz_view_tpms_info.h"
 #include "helpers/subbrute_device.h"
 #include "helpers/subbrute_worker.h"
 #include "helpers/subbrute_settings.h"
 #include "helpers/subbrute_radio_device_loader.h"
+#endif /* !FURI_PROFILE_LAB */
 
 #include <gui/gui.h>
 #include <assets_icons.h>
@@ -84,7 +88,9 @@ struct SubGhz {
     SubGhzFrequencyAnalyzer* subghz_frequency_analyzer;
     SubGhzSpectrum* subghz_spectrum;
     SubGhzReadRAW* subghz_read_raw;
+#ifndef FURI_PROFILE_LAB
     SubGhzJammer* subghz_jammer;
+#endif /* !FURI_PROFILE_LAB */
     SubGhzPlaylist* subghz_playlist;
     SubGhzViewTpmsInfo* subghz_tpms_info;
     // TPMS edit-scene state (which field is being edited and the result buffers
@@ -93,6 +99,7 @@ struct SubGhz {
     int32_t tpms_edit_number_value;
     uint8_t tpms_edit_id_bytes[4];
 
+#ifndef FURI_PROFILE_LAB
     // SubBrute Bruteforcer
     SubBruteMainView* subbrute_main_view;
     SubBruteAttackView* subbrute_attack_view;
@@ -100,6 +107,7 @@ struct SubGhz {
     SubBruteWorker* subbrute_worker;
     SubBruteSettings* subbrute_settings;
     const SubGhzDevice* subbrute_radio_device;
+#endif /* !FURI_PROFILE_LAB */
 
     bool raw_send_only;
     bool export_to_usb;

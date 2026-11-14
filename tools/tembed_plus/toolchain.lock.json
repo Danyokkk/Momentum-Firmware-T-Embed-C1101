@@ -1,0 +1,27 @@
+{
+  "board": "lilygo_t_embed_cc1101",
+  "profile": "lab",
+  "idf_target": "esp32s3",
+  "build_dir": "build_t_embed_plus",
+  "sdkconfig_defaults": [
+    "sdkconfig.defaults",
+    "sdkconfig.defaults.lilygo_t_embed_cc1101",
+    "sdkconfig.defaults.tembed_plus_lab"
+  ],
+  "esp_idf": {
+    "version": "5.4.1",
+    "tag": "v5.4.1",
+    "commit": "4c2820d377d1375e787bcef612f0c32c1427d183",
+    "pristine_blobs": {
+      "components/esp_wifi/lib/esp32s3/libnet80211.a": "e4942181894522a69571d9a0d527fa455c21d5d7315ce93b76f20dd431180f8d"
+    }
+  },
+  "tools": {
+    "xtensa-esp-elf": "esp-14.2.0_20241119",
+    "cmake": "3.30.2",
+    "ninja": "1.12.1",
+    "python": "3.12 (idf5.4_py3.12_env)",
+    "host_tests_zig": "0.13.0 (pip: ziglang==0.13.0)"
+  },
+  "managed_components": "see dependencies.lock (espressif/esp_tinyusb 1.7.6~2, espressif/tinyusb 0.21.0~4, espressif/led_strip 3.0.3, espressif/mdns 1.12.0)"
+}

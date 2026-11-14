@@ -86,6 +86,9 @@ void wlan_hal_set_promiscuous(bool enable, wifi_promiscuous_cb_t cb);
  *  while a survey (wifite) owns the radio. */
 void wlan_hal_set_ap_mode(bool enable);
 
+/* Raw 802.11 frame injection, beacon spam and the evil-portal entry points
+ * are not part of the lab profile: neither declared nor built. */
+#ifndef FURI_PROFILE_LAB
 /** Sende einen rohen 802.11-Frame (für Deauth/Disassoc) via
  *  esp_wifi_80211_tx(). Frame-Länge bis 256 Bytes. */
 bool wlan_hal_send_raw(const uint8_t* data, uint16_t len);
@@ -97,6 +100,7 @@ bool wlan_hal_send_raw(const uint8_t* data, uint16_t len);
  *  vertragen. Nur aus einem echten FreeRTOS-Task mit aktivem Promiscuous
  *  aufrufen. true = Frame ging in den TX-Ring. */
 bool wlan_hal_raw_tx_retry(const uint8_t* data, uint16_t len);
+#endif /* !FURI_PROFILE_LAB */
 
 /** Generischer Worker-Hook: ruft fn(arg) im wlan-Worker-Task auf und blockt
  *  bis er fertig ist. Nötig für Code, der esp_wifi_*-APIs vom Worker aus
@@ -118,6 +122,7 @@ void wlan_hal_survey_end(void);
 /** Non-blocking progress/error text. */
 const char* wlan_hal_survey_status(void);
 
+#ifndef FURI_PROFILE_LAB
 /** Beacon-Spam-Modi für wlan_hal_beacon_spam_start(). */
 typedef enum {
     WlanHalBeaconModeFunny,
@@ -204,6 +209,7 @@ void wlan_hal_evil_portal_set_dns_upstream(uint32_t upstream_ip_be);
  *  wlan-Worker). Nur aus einem echten xTaskCreate-Task aufrufen — aus einem
  *  FuriThread wird der Aufruf geloggt und verworfen (false), statt zu crashen. */
 bool wlan_hal_raw_tx_direct(const uint8_t* data, uint16_t len);
+#endif /* !FURI_PROFILE_LAB */
 
 /** Channel lock — cegah set_channel selama attack.
  *  Saat locked, wlan_hal_set_channel() no-op. */

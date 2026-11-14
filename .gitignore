@@ -41,3 +41,6 @@ releases/*.zip
 
 # Claude Code local state (settings, memory, locks) - not project source
 .claude/
+
+# tools/tembed_plus/make_sd_bundle.py output
+dist/

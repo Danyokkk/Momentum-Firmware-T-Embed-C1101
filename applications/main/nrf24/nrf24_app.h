@@ -13,23 +13,30 @@
 #include <wifi.h>
 
 #include "views/nrf24_spectrum_view.h"
+/* Lab profile: only module detection and the receive-only spectrum view are
+ * built. The jammer and MouseJack sources are not compiled (fam_config.py,
+ * LAB_EXCLUDED_SOURCES) and nothing below references them. */
+#ifndef FURI_PROFILE_LAB
 #include "views/nrf24_jam_view.h"
 #include "views/nrf24_scan_view.h"
 #include "views/nrf24_mj_scan_view.h"
 #include "views/nrf24_mj_attack_view.h"
 #include "helpers/nrf24_mj_core.h"
 #include "helpers/nrf24_channel_source.h"
+#endif /* !FURI_PROFILE_LAB */
 #include "scenes/scenes.h"
 
 typedef enum {
     Nrf24ViewSubmenu,
     Nrf24ViewWidget,
     Nrf24ViewSpectrum,
+#ifndef FURI_PROFILE_LAB
     Nrf24ViewJam,
     Nrf24ViewScan,
     Nrf24ViewJamConfig,
     Nrf24ViewMjScan,
     Nrf24ViewMjAttack,
+#endif /* !FURI_PROFILE_LAB */
 } Nrf24View;
 
 #define NRF24_WIFI_SCAN_MAX 24
@@ -45,6 +52,7 @@ typedef struct Nrf24App {
     Storage* storage;
 
     View* spectrum_view;
+#ifndef FURI_PROFILE_LAB
     View* jam_view; /* unified jam engine */
     View* scan_view; /* activity-scan progress */
     View* mj_scan_view;
@@ -66,6 +74,7 @@ typedef struct Nrf24App {
     int8_t mj_selected_target; /* -1 = none */
     FuriString* mj_script_path;
     bool mj_auto_mode;
+#endif /* !FURI_PROFILE_LAB */
 
     /* WiFi war beim App-Start global aktiv → wir haben es pausiert (der
      * breitband 2.4-GHz-Jammer schießt sonst die eigene STA-Verbindung ab)

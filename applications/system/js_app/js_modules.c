@@ -41,7 +41,9 @@ const FlipperAppPluginDescriptor* js_subghz_ep(void);
 #if BOARD_HAS_IR
 const FlipperAppPluginDescriptor* js_infrared_ep(void);
 #endif
+#ifndef FURI_PROFILE_LAB
 const FlipperAppPluginDescriptor* js_blebeacon_ep(void);
+#endif /* !FURI_PROFILE_LAB */
 // js_serial, js_gpio, js_i2c, js_spi excluded - need HAL porting
 
 typedef const FlipperAppPluginDescriptor* (*JsPluginEpFunc)(void);
@@ -74,7 +76,9 @@ static const JsPluginEpFunc static_plugins[] = {
 #if BOARD_HAS_IR
     js_infrared_ep,
 #endif
+#ifndef FURI_PROFILE_LAB
     js_blebeacon_ep,
+#endif /* !FURI_PROFILE_LAB */
 };
 #endif // ESP_PLATFORM
 

@@ -159,6 +159,12 @@ uint8_t nrf24_hw_listen_rpd(uint8_t channel) {
     return nrf24_hw_read_reg(NRF_REG_RPD) & 0x01;
 }
 
+/* Everything from here to the end of the file is the transmit side: constant
+ * carrier and packet-flood jamming, promiscuous sniffing and MouseJack unicast
+ * TX. The lab profile is receive-only (probe + RPD spectrum), so none of it is
+ * built. */
+#ifndef FURI_PROFILE_LAB
+
 /* Build an RF_SETUP byte for the given data rate (0=1M, 1=2M, 2=250k), PA level
  * (0..3 = MIN/LOW/HIGH/MAX) and optional continuous-wave + PLL-lock bits. */
 static uint8_t nrf24_rf_setup_byte(uint8_t data_rate, uint8_t pa_level, bool cont_wave) {
@@ -559,3 +565,5 @@ void nrf24_hw_flush_rx(void) {
 void nrf24_hw_flush_tx(void) {
     nrf24_hw_cmd(NRF_CMD_FLUSH_TX);
 }
+
+#endif /* !FURI_PROFILE_LAB */

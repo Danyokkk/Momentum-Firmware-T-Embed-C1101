@@ -531,6 +531,7 @@ static void wlan_worker_fn(void* arg) {
             break;
 
         case WCMD_SEND_RAW: {
+#ifndef FURI_PROFILE_LAB /* lab profile: no raw 802.11 frame injection */
             // FIX KRITIS: pakai WIFI_IF_AP (bukan STA) + en_sys_seq=false
             // untuk mengikuti strategi Bruce. TX path AP lebih permisif,
             // dan sequence dari template kita dipakai (bukan di-override driver).
@@ -544,6 +545,7 @@ static void wlan_worker_fn(void* arg) {
             if(tx_err != ESP_OK) {
                 ESP_LOGD(TAG, "80211_tx(AP): %s", esp_err_to_name(tx_err));
             }
+#endif /* !FURI_PROFILE_LAB */
             break;
         }
 
@@ -870,8 +872,12 @@ static void survey_radio_stop(void) {
 }
 
 bool wlan_hal_survey_begin(bool wifi) {
+#ifdef FURI_PROFILE_LAB
+    if(survey_active()) {
+#else
     if(survey_active() || wlan_hal_beacon_spam_is_running() ||
        wlan_hal_evil_portal_is_running()) {
+#endif
         survey_status("OTHER RADIO APP ACTIVE");
         return false;
     }
@@ -1174,6 +1180,9 @@ void wlan_hal_set_ap_mode(bool enable) {
     wlan_send_cmd_sync(&cmd);
 }
 
+/* Raw 802.11 management-frame transmit (deauth, beacon, SAE floods are built on
+ * these). Not present in the lab profile. */
+#ifndef FURI_PROFILE_LAB
 bool wlan_hal_send_raw(const uint8_t* data, uint16_t len) {
     if(!s_started || !s_cmd_queue || !data || len > 256) return false;
     if(!survey_active() && !s_ap_mode) wlan_hal_set_ap_mode(true);
@@ -1232,6 +1241,7 @@ bool wlan_hal_raw_tx_direct(const uint8_t* data, uint16_t len) {
     }
     return false;
 }
+#endif /* !FURI_PROFILE_LAB */
 
 void wlan_hal_channel_lock(void) {
     s_channel_locked = true;
@@ -1316,6 +1326,16 @@ void wlan_hal_scan_cancellable(
         .bssid = NULL,
         .channel = 0,
         .show_hidden = true,
+#ifdef FURI_PROFILE_LAB
+        /* Lab profile: passive scan. The radio only listens for beacons on each
+         * channel and sends no probe requests. Hidden networks therefore show
+         * up without a name. 120 ms per channel covers the usual 102.4 ms
+         * beacon interval. */
+        .scan_type = WIFI_SCAN_TYPE_PASSIVE,
+        .scan_time = {
+            .passive = 120,
+        },
+#else
         .scan_type = WIFI_SCAN_TYPE_ACTIVE,
         .scan_time = {
             .active = {
@@ -1323,6 +1343,7 @@ void wlan_hal_scan_cancellable(
                 .max = 120,
             },
         },
+#endif
     };
     WlanCmd cmd = {
         .type = WCMD_SCAN,
@@ -1345,6 +1366,7 @@ void wlan_hal_scan_cancellable(
     furi_hal_power_light_sleep_inhibit_exit();
 }
 
+#ifndef FURI_PROFILE_LAB /* beacon spam: not present in the lab profile */
 // ---------------------------------------------------------------------------
 // Beacon-Spam: dedizierter xTaskCreate-Task (parallel zum Worker), nutzt
 // esp_wifi_80211_tx() direkt. Frame-Counter + Stop-Flag sind volatile.
@@ -1528,3 +1550,4 @@ bool wlan_hal_beacon_spam_is_running(void) {
 uint32_t wlan_hal_beacon_spam_get_frame_count(void) {
     return s_beacon_frames;
 }
+#endif /* !FURI_PROFILE_LAB */

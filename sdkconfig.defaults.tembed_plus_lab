@@ -1,0 +1,18 @@
+# LilyGO T-Embed CC1101 Plus, lab profile. Applied after sdkconfig.defaults and
+# sdkconfig.defaults.lilygo_t_embed_cc1101 by tools/tembed_plus/build.py.
+#
+# Hardware: the Plus carries the nRF24L01 module on GPIO43 (CE) / GPIO44 (CSN),
+# so the external UART on those pins stays off and the companion-board (BW16)
+# I2C link is not built.
+CONFIG_T_EMBED_EXTERNAL_UART=n
+CONFIG_T_EMBED_BW16_I2C=n
+
+# TLS: sdkconfig.defaults turns server verification off globally. In this
+# profile a client that does not supply a CA (or the certificate bundle) fails
+# the handshake instead of silently talking to an unverified server.
+CONFIG_ESP_TLS_INSECURE=n
+CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY=n
+
+# OTA rollback: an updated image must confirm itself after start-up
+# (main/app_main.c) or the bootloader returns to the previous one.
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y

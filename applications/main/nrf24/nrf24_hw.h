@@ -41,6 +41,8 @@ void nrf24_hw_set_channel(uint8_t channel);
  * Must be wrapped in acquire/release. */
 uint8_t nrf24_hw_listen_rpd(uint8_t channel);
 
+#ifndef FURI_PROFILE_LAB /* transmit side: not built in the lab profile */
+
 /* Constant-carrier jammer: enable continuous wave on the given channel
  * at maximum PA power, 2 Mbps data rate, PLL locked.
  * Must be wrapped in acquire/release. CE is left HIGH on return. */
@@ -148,3 +150,5 @@ void nrf24_hw_tx_stop(void);
 /* Flush helpers — useful between TX bursts. */
 void nrf24_hw_flush_rx(void);
 void nrf24_hw_flush_tx(void);
+
+#endif /* !FURI_PROFILE_LAB */

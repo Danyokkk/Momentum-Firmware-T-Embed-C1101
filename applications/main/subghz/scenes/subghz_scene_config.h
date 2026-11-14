@@ -21,8 +21,11 @@ ADD_SCENE(subghz, frequency_analyzer, FrequencyAnalyzer)
 ADD_SCENE(subghz, spectrum, Spectrum)
 ADD_SCENE(subghz, radio_settings, ExtModuleSettings)
 ADD_SCENE(subghz, read_raw, ReadRAW)
+#ifndef FURI_PROFILE_LAB
 ADD_SCENE(subghz, jammer, Jammer)
+#endif /* !FURI_PROFILE_LAB */
 ADD_SCENE(subghz, playlist, Playlist)
+#ifndef FURI_PROFILE_LAB
 ADD_SCENE(subghz, bf_start, BfStart)
 ADD_SCENE(subghz, bf_setup_attack, BfSetupAttack)
 ADD_SCENE(subghz, bf_run_attack, BfRunAttack)
@@ -31,6 +34,7 @@ ADD_SCENE(subghz, bf_save_name, BfSaveName)
 ADD_SCENE(subghz, bf_save_success, BfSaveSuccess)
 ADD_SCENE(subghz, bf_load_file, BfLoadFile)
 ADD_SCENE(subghz, bf_load_select, BfLoadSelect)
+#endif /* !FURI_PROFILE_LAB */
 ADD_SCENE(subghz, more_raw, MoreRAW)
 ADD_SCENE(subghz, decode_raw, DecodeRAW)
 ADD_SCENE(subghz, delete_raw, DeleteRAW)

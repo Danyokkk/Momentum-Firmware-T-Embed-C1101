@@ -53,6 +53,7 @@ APPS = [
     # "lfrfid" (125 kHz RFID) disabled: no currently supported board has the
     # LF-RFID hardware. Re-add here to build the app again.
     "wlan",
+    "wifi_lab",  # passive Wi-Fi diagnostics; replaces "wlan" in the lab profile
     "wifi",
     "ota_updater",
     "streaming",
@@ -150,6 +151,55 @@ if _board in _boards_without_nrf24:
 if _board in _boards_without_wolf3d:
     APPS = [a for a in APPS if a != "wolf3d"]
 # (wolf3d und doom stehen nicht in APPS — externer FAP-Pfad. Block bleibt für Klarheit.)
+
+# ---------------------------------------------------------------------------
+# Lab profile (the only profile this fork builds; see CMakeLists.txt and
+# docs/tembed-plus/FEATURE_MATRIX.md).
+#
+# LAB_EXCLUDED_APPS: built-in apps that are not compiled at all. The value is
+# the reason shown in the feature matrix.
+# LAB_EXCLUDED_SOURCES: for mixed apps that keep their benign parts, source
+# globs (relative to the app directory) that are not compiled. The remaining
+# files reference the dropped parts only inside #ifndef FURI_PROFILE_LAB.
+# ---------------------------------------------------------------------------
+LAB_EXCLUDED_APPS = {
+    "wlan": "deauth, SAE flood, beacon spam, evil portal, MITM, printer hijack "
+            "and unverified-TLS OTA live in this app; a passive scanner replaces it",
+    "ble_spam": "BLE advertisement spam and writes to third-party devices",
+    "bad_usb": "scripted keystroke injection over USB and BLE",
+    "js_blebeacon": "lets scripts broadcast arbitrary BLE advertisements",
+}
+
+LAB_EXCLUDED_SOURCES = {
+    # nRF24: only module detection and the receive-only spectrum view remain.
+    "nrf24": [
+        "scenes/scene_jam*.c",
+        "scenes/scene_mj_*.c",
+        "helpers/nrf24_jam_*.c",
+        "helpers/nrf24_mj_*.c",
+        "helpers/nrf24_channel_source.c",
+        "views/nrf24_jam_view.c",
+        "views/nrf24_mj_*.c",
+        "views/nrf24_scan_view.c",
+        "nrf24_wifi_scan.c",
+    ],
+    # Sub-GHz: no jammer, no code brute-forcer. (The "dangerous frequency"
+    # opt-in is neutralised in furi_hal_subghz_set_dangerous_frequency(), which
+    # also covers CLI, JS and external apps.)
+    "subghz": [
+        "scenes/subghz_scene_jammer.c",
+        "scenes/subghz_scene_bf_*.c",
+        "helpers/subbrute_*.c",
+        "helpers/radio_device_loader.c",  # jammer-only radio selection
+        "views/subbrute_*.c",
+        "views/subghz_jammer.c",
+    ],
+}
+
+if os.environ.get("FLIPPER_PROFILE", "lab") != "lab":
+    raise RuntimeError("Only FLIPPER_PROFILE=lab is supported by this fork")
+
+APPS = [a for a in APPS if a not in LAB_EXCLUDED_APPS]
 
 EXTRA_EXT_APPS = []
 TARGET_HW = 32

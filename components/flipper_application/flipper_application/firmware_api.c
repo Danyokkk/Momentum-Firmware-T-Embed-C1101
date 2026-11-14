@@ -41,7 +41,9 @@
 #include <esp_http_client.h>
 #include <esp_crt_bundle.h>
 #include <esp_random.h>
+#ifndef FURI_PROFILE_LAB
 #include <wifi/wifite.h>
+#endif /* !FURI_PROFILE_LAB */
 #include <gui/modules/dialog_ex.h>
 #include <gui/modules/file_browser.h>
 #include <notification/notification.h>
@@ -891,7 +893,9 @@ static const struct sym_entry firmware_api_table[] = {
     { .hash = 0x7c9dec55, .address = (uint32_t)sinf }, /* sinf */
     { .hash = 0x7d429ba6, .address = (uint32_t)widget_add_text_box_element }, /* widget_add_text_box_element */
     { .hash = 0x7d458759, .address = (uint32_t)furi_ms_to_ticks }, /* furi_ms_to_ticks */
+#ifndef FURI_PROFILE_LAB
     { .hash = 0x7ddd5976, .address = (uint32_t)wifite_finished }, /* wifite_finished */
+#endif /* !FURI_PROFILE_LAB */
     { .hash = 0x7e6e84d5, .address = (uint32_t)bit_buffer_get_data }, /* bit_buffer_get_data */
     { .hash = 0x7e7a5018, .address = (uint32_t)storage_file_exists }, /* storage_file_exists */
     { .hash = 0x7e99681e, .address = (uint32_t)&I_Pin_back_arrow_10x8 }, /* I_Pin_back_arrow_10x8 */
@@ -902,7 +906,9 @@ static const struct sym_entry firmware_api_table[] = {
     { .hash = 0x815c5496, .address = (uint32_t)subghz_protocol_blocks_parity8 }, /* subghz_protocol_blocks_parity8 */
     { .hash = 0x820e6bf0, .address = (uint32_t)__fixdfsi }, /* __fixdfsi */
     { .hash = 0x822a86f2, .address = (uint32_t)furi_hal_usb_reinit_for_owner }, /* furi_hal_usb_reinit_for_owner */
+#ifndef FURI_PROFILE_LAB
     { .hash = 0x82947c5a, .address = (uint32_t)wifite_start }, /* wifite_start */
+#endif /* !FURI_PROFILE_LAB */
     { .hash = 0x82b968c6, .address = (uint32_t)nfc_scanner_free }, /* nfc_scanner_free */
     { .hash = 0x82c0938a, .address = (uint32_t)nfc_scanner_stop }, /* nfc_scanner_stop */
     { .hash = 0x82d80748, .address = (uint32_t)simple_array_cget_data }, /* simple_array_cget_data */
@@ -1103,7 +1109,9 @@ static const struct sym_entry firmware_api_table[] = {
     { .hash = 0xada6324e, .address = (uint32_t)furi_record_close }, /* furi_record_close */
     { .hash = 0xae3fb97f, .address = (uint32_t)furi_hal_infrared_get_last_tx_error }, /* furi_hal_infrared_get_last_tx_error */
     { .hash = 0xae5e1eed, .address = (uint32_t)subghz_environment_free }, /* subghz_environment_free */
+#ifndef FURI_PROFILE_LAB
     { .hash = 0xae808b92, .address = (uint32_t)wifite_cancel }, /* wifite_cancel */
+#endif /* !FURI_PROFILE_LAB */
     { .hash = 0xaee3d796, .address = (uint32_t)flipper_format_write_comment_cstr }, /* flipper_format_write_comment_cstr */
     { .hash = 0xaef6d1a4, .address = (uint32_t)storage_simply_remove }, /* storage_simply_remove */
     { .hash = 0xaf067c12, .address = (uint32_t)strcspn }, /* strcspn */
@@ -1141,8 +1149,12 @@ static const struct sym_entry firmware_api_table[] = {
     { .hash = 0xb5954207, .address = (uint32_t)furi_hal_hid_kb_release_all }, /* furi_hal_hid_kb_release_all */
     { .hash = 0xb6191733, .address = (uint32_t)stream_clean }, /* stream_clean */
     { .hash = 0xb653a0df, .address = (uint32_t)byte_input_set_header_text }, /* byte_input_set_header_text */
+#ifndef FURI_PROFILE_LAB
     { .hash = 0xb65a6e2e, .address = (uint32_t)wifite_free }, /* wifite_free */
+#endif /* !FURI_PROFILE_LAB */
+#ifndef FURI_PROFILE_LAB
     { .hash = 0xb65fde23, .address = (uint32_t)wifite_poll }, /* wifite_poll */
+#endif /* !FURI_PROFILE_LAB */
     { .hash = 0xb7865efb, .address = (uint32_t)stream_write }, /* stream_write */
     { .hash = 0xb7a22125, .address = (uint32_t)subghz_setting_get_frequency }, /* subghz_setting_get_frequency */
     { .hash = 0xb7cf09de, .address = (uint32_t)variable_item_list_alloc }, /* variable_item_list_alloc */

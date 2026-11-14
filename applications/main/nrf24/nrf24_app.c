@@ -1,6 +1,8 @@
 #include "nrf24_app.h"
+#ifndef FURI_PROFILE_LAB
 #include "helpers/nrf24_jam_config.h"
 #include "helpers/nrf24_channel_source.h"
+#endif /* !FURI_PROFILE_LAB */
 #include <stdlib.h>
 
 static bool nrf24_app_custom_event_callback(void* context, uint32_t event) {
@@ -46,15 +48,18 @@ static Nrf24App* nrf24_app_alloc(void) {
     view_dispatcher_add_view(app->view_dispatcher, Nrf24ViewWidget, widget_get_view(app->widget));
 
     app->var_item_list = variable_item_list_alloc();
+#ifndef FURI_PROFILE_LAB
     view_dispatcher_add_view(
         app->view_dispatcher,
         Nrf24ViewJamConfig,
         variable_item_list_get_view(app->var_item_list));
+#endif /* !FURI_PROFILE_LAB */
 
     app->spectrum_view = nrf24_spectrum_view_alloc();
     view_set_context(app->spectrum_view, app->view_dispatcher);
     view_dispatcher_add_view(app->view_dispatcher, Nrf24ViewSpectrum, app->spectrum_view);
 
+#ifndef FURI_PROFILE_LAB
     app->jam_view = nrf24_jam_view_alloc();
     view_set_context(app->jam_view, app->view_dispatcher);
     view_dispatcher_add_view(app->view_dispatcher, Nrf24ViewJam, app->jam_view);
@@ -83,6 +88,7 @@ static Nrf24App* nrf24_app_alloc(void) {
     app->mj_selected_target = -1;
     app->mj_script_path = furi_string_alloc();
     app->mj_auto_mode = false;
+#endif /* !FURI_PROFILE_LAB */
 
     /* WiFi pausieren: der (default breitband) 2.4-GHz-Jammer stört die eigene
      * WiFi-STA massiv (Beacon-Timeout → Reconnect-Churn). War WiFi global an,
@@ -102,17 +108,20 @@ static Nrf24App* nrf24_app_alloc(void) {
 static void nrf24_app_free(Nrf24App* app) {
     view_dispatcher_remove_view(app->view_dispatcher, Nrf24ViewSubmenu);
     view_dispatcher_remove_view(app->view_dispatcher, Nrf24ViewWidget);
-    view_dispatcher_remove_view(app->view_dispatcher, Nrf24ViewJamConfig);
     view_dispatcher_remove_view(app->view_dispatcher, Nrf24ViewSpectrum);
+#ifndef FURI_PROFILE_LAB
+    view_dispatcher_remove_view(app->view_dispatcher, Nrf24ViewJamConfig);
     view_dispatcher_remove_view(app->view_dispatcher, Nrf24ViewJam);
     view_dispatcher_remove_view(app->view_dispatcher, Nrf24ViewScan);
     view_dispatcher_remove_view(app->view_dispatcher, Nrf24ViewMjScan);
     view_dispatcher_remove_view(app->view_dispatcher, Nrf24ViewMjAttack);
+#endif /* !FURI_PROFILE_LAB */
 
     submenu_free(app->submenu);
     widget_free(app->widget);
     variable_item_list_free(app->var_item_list);
     nrf24_spectrum_view_free(app->spectrum_view);
+#ifndef FURI_PROFILE_LAB
     nrf24_jam_view_free(app->jam_view);
     nrf24_scan_view_free(app->scan_view);
     nrf24_mj_scan_view_free(app->mj_scan_view);
@@ -127,6 +136,7 @@ static void nrf24_app_free(Nrf24App* app) {
         furi_string_free(app->mj_script_path);
         app->mj_script_path = NULL;
     }
+#endif /* !FURI_PROFILE_LAB */
 
     /* WiFi wiederherstellen, falls wir es beim Start pausiert haben. */
     if(app->wifi_was_paused) {

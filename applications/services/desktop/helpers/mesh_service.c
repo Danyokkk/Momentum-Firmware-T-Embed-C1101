@@ -488,6 +488,18 @@ fail:
 /* ─────── public API ─────── */
 
 bool mesh_service_start(MeshRole role, MeshEventCallback cb, void* ctx) {
+#ifdef FURI_PROFILE_LAB
+    /* Lab profile: the buddy link is disabled until it meets the requirements in
+     * docs/tembed-plus/FEATURE_MATRIX.md (Mesh / Buddy). As audited it sends
+     * unencrypted ESP-NOW frames (pi.encrypt = false), has no message
+     * authentication or replay protection, and a buddy accepts feature commands
+     * from any sender. ESP-NOW is therefore never initialised: this is the only
+     * call path that reaches esp_now_init(). */
+    UNUSED(role);
+    UNUSED(cb);
+    UNUSED(ctx);
+    return false;
+#endif
     if(s_svc.active) {
         /* Re-configure callback wenn schon aktiv und Rolle identisch. */
         if(s_svc.role == role) {

@@ -210,12 +210,14 @@ SubGhz* subghz_alloc(bool alloc_for_tx_only) {
         subghz_read_raw_get_view(subghz->subghz_read_raw));
 
     if(!alloc_for_tx_only) {
+#ifndef FURI_PROFILE_LAB
         // Jammer
         subghz->subghz_jammer = subghz_jammer_alloc();
         view_dispatcher_add_view(
             subghz->view_dispatcher,
             SubGhzViewIdJammer,
             subghz_jammer_get_view(subghz->subghz_jammer));
+#endif /* !FURI_PROFILE_LAB */
 
         // Playlist
         subghz->subghz_playlist = subghz_playlist_alloc();
@@ -224,6 +226,7 @@ SubGhz* subghz_alloc(bool alloc_for_tx_only) {
             SubGhzViewIdPlaylist,
             subghz_playlist_get_view(subghz->subghz_playlist));
 
+#ifndef FURI_PROFILE_LAB
         // SubBrute Bruteforcer
         subghz->subbrute_radio_device = subbrute_radio_device_loader_set(
             NULL, SubGhzRadioDeviceTypeExternalCC1101);
@@ -243,6 +246,7 @@ SubGhz* subghz_alloc(bool alloc_for_tx_only) {
             subghz->view_dispatcher,
             SubGhzViewIdBfAttack,
             subbrute_attack_view_get_view(subghz->subbrute_attack_view));
+#endif /* !FURI_PROFILE_LAB */
     }
 
     //init threshold rssi
@@ -367,6 +371,7 @@ void subghz_free(SubGhz* subghz, bool alloc_for_tx_only) {
         subghz_spectrum_free(subghz->subghz_spectrum);
     }
     if(!alloc_for_tx_only) {
+#ifndef FURI_PROFILE_LAB
         // SubBrute Bruteforcer
         view_dispatcher_remove_view(subghz->view_dispatcher, SubGhzViewIdBfMain);
         subbrute_main_view_free(subghz->subbrute_main_view);
@@ -381,6 +386,7 @@ void subghz_free(SubGhz* subghz, bool alloc_for_tx_only) {
         // Jammer
         view_dispatcher_remove_view(subghz->view_dispatcher, SubGhzViewIdJammer);
         subghz_jammer_free(subghz->subghz_jammer);
+#endif /* !FURI_PROFILE_LAB */
 
         // Playlist
         view_dispatcher_remove_view(subghz->view_dispatcher, SubGhzViewIdPlaylist);

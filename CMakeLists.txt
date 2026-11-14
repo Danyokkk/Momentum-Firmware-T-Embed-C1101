@@ -3,35 +3,34 @@ cmake_minimum_required(VERSION 3.16)
 set(EXTRA_COMPONENT_DIRS "components")
 
 # ---------------------------------------------------------------------------
-# Patch libnet80211.a to allow raw TX of deauth/disassoc management frames.
-# The closed-source WiFi blob rejects frame types 0xC0/0xA0; we patch
-# ieee80211_raw_frame_sanity_check() to return 0. Idempotent — skips if
-# already patched.  Runs at configure time (before library path resolution).
+# Build profile.
+#
+# "lab" is the only profile this fork builds. It is a passive-by-default,
+# authorised-lab firmware: the features listed as "excluded for safety" in
+# docs/tembed-plus/FEATURE_MATRIX.md are not compiled, and the build never
+# modifies the installed ESP-IDF. The policy lives in three places:
+#   - here            : no SDK patching, FURI_PROFILE_LAB=1 for all C/C++ code
+#   - fam_config.py   : apps and per-app sources that are left out
+#   - #ifndef FURI_PROFILE_LAB guards in the remaining mixed apps
+# tools/tembed_plus/check_lab_exclusions.py verifies the result on the linked
+# image, so a regression fails the build check instead of shipping.
 # ---------------------------------------------------------------------------
-set(_wifi_lib "$ENV{IDF_PATH}/components/esp_wifi/lib/esp32s3/libnet80211.a")
-find_program(_xt_ar NAMES xtensa-esp32s3-elf-ar
-    PATHS "$ENV{IDF_TOOLS_PATH}/tools/xtensa-esp-elf/*/xtensa-esp-elf/bin"
-          "$ENV{USERPROFILE}/.espressif/tools/xtensa-esp-elf/*/xtensa-esp-elf/bin"
-          "$ENV{HOME}/.espressif/tools/xtensa-esp-elf/*/xtensa-esp-elf/bin")
-find_program(_xt_objcopy NAMES xtensa-esp32s3-elf-objcopy
-    PATHS "$ENV{IDF_TOOLS_PATH}/tools/xtensa-esp-elf/*/xtensa-esp-elf/bin"
-          "$ENV{USERPROFILE}/.espressif/tools/xtensa-esp-elf/*/xtensa-esp-elf/bin"
-          "$ENV{HOME}/.espressif/tools/xtensa-esp-elf/*/xtensa-esp-elf/bin")
-
-if(_xt_ar AND _xt_objcopy AND EXISTS "${_wifi_lib}")
-    find_program(PYTHON_EXECUTABLE NAMES python3 python)
-    if(PYTHON_EXECUTABLE)
-        execute_process(
-            COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/patch_wifi_lib.py"
-                "${_wifi_lib}" "${_xt_objcopy}" "${_xt_ar}" "${_wifi_lib}"
-            RESULT_VARIABLE _patch_rc OUTPUT_VARIABLE _patch_out ERROR_VARIABLE _patch_err)
-        if(_patch_rc EQUAL 0)
-            message(STATUS "${_patch_out}")
-        else()
-            message(WARNING "WiFi lib patch failed: ${_patch_err}")
-        endif()
-    endif()
+set(FLIPPER_PROFILE "lab" CACHE STRING "Build profile (only \"lab\" is supported by this fork)")
+if(NOT FLIPPER_PROFILE STREQUAL "lab")
+    message(FATAL_ERROR
+        "FLIPPER_PROFILE='${FLIPPER_PROFILE}' is not supported. This fork only builds the "
+        "\"lab\" profile; see docs/tembed-plus/FEATURE_MATRIX.md.")
 endif()
+set(ENV{FLIPPER_PROFILE} "${FLIPPER_PROFILE}")
+
+# ---------------------------------------------------------------------------
+# Upstream patched $IDF_PATH/components/esp_wifi/lib/esp32s3/libnet80211.a in
+# place here (tools/patch_wifi_lib.py) so the Wi-Fi blob would transmit raw
+# deauth/disassoc frames. That rewrote the developer's ESP-IDF installation for
+# every project using it and is the enabling step for the deauth features, so
+# this fork does not do it. tools/tembed_plus/check_idf_pristine.py confirms the
+# installed blob still matches Espressif's release.
+# ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 # App-Descriptor-Version (esp_app_desc_t.version) aus der zentralen Port-Version
@@ -51,5 +50,8 @@ endif()
 message(STATUS "Firmware version (PROJECT_VER): ${PROJECT_VER}")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+# Visible to every component and every generated app target.
+idf_build_set_property(COMPILE_DEFINITIONS "FURI_PROFILE_LAB=1" APPEND)
 project(furi_esp32)
-include(cmake/wifite_sdk_adapter.cmake)
+# cmake/wifite_sdk_adapter.cmake (swaps the SDK's esp_wps.c for a modified copy
+# used by the WPS PIN attack engine) is intentionally not included.

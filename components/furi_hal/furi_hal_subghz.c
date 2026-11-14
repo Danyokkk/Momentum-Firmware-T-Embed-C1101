@@ -443,7 +443,15 @@ void furi_hal_subghz_set_rolling_counter_mult(int32_t mult) {
 }
 
 void furi_hal_subghz_set_dangerous_frequency(bool state_i) {
+#ifdef FURI_PROFILE_LAB
+    /* Lab profile: transmit stays inside the bands the CC1101 front end and the
+     * board's band switch are built for (see furi_hal_subghz_is_tx_allowed()).
+     * The SD-card opt-in that widens them is ignored for every caller. */
+    UNUSED(state_i);
+    furi_hal_subghz.dangerous_frequency_i = false;
+#else
     furi_hal_subghz.dangerous_frequency_i = state_i;
+#endif
 }
 
 void furi_hal_subghz_set_async_mirror_pin(const GpioPin* pin) {
