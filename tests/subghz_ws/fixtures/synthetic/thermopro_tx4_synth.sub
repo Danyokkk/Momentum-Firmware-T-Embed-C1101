@@ -1,0 +1,15 @@
+Filetype: Flipper SubGhz Key File
+Version: 1
+# The reading encoded into thermopro_tx4_synth_raw.sub (written by make_synthetic_fixtures.py).
+Frequency: 433920000
+Preset: FuriHalSubGhzPresetOok650Async
+Protocol: ThermoPRO-TX4
+Id: 179
+Bit: 37
+Data: 00 00 00 13 67 5F 0A 5A
+Batt: 1
+Hum: 45
+Ts: 1700000000
+Ch: 3
+Btn: 0
+Temp: -12.300000

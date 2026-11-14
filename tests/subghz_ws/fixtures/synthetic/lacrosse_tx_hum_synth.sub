@@ -1,0 +1,15 @@
+Filetype: Flipper SubGhz Key File
+Version: 1
+# The reading encoded into lacrosse_tx_hum_synth_raw.sub (written by make_synthetic_fixtures.py).
+Frequency: 433920000
+Preset: FuriHalSubGhzPresetOok650Async
+Protocol: LaCrosse_TX
+Id: 75
+Bit: 44
+Data: 00 00 00 AE 97 46 04 6C
+Batt: 255
+Hum: 46
+Ts: 1700000000
+Ch: 255
+Btn: 255
+# Temp is not asserted: a humidity message does not carry a temperature and the decoder leaves the field untouched

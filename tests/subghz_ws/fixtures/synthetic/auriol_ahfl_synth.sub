@@ -1,0 +1,15 @@
+Filetype: Flipper SubGhz Key File
+Version: 1
+# The reading encoded into auriol_ahfl_synth_raw.sub (written by make_synthetic_fixtures.py).
+Frequency: 433920000
+Preset: FuriHalSubGhzPresetOok650Async
+Protocol: Auriol AHFL
+Id: 33
+Bit: 42
+Data: 00 00 00 84 7E B1 41 32
+# Batt is not asserted: header comment says the bit is 1 = battery OK, the code reports it as battery low; encoded bit = 0
+Hum: 40
+Ts: 1700000000
+Ch: 2
+Btn: 0
+Temp: -8.400000

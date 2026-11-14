@@ -1,0 +1,15 @@
+Filetype: Flipper SubGhz Key File
+Version: 1
+# The reading encoded into nexus_th_synth_raw.sub (written by make_synthetic_fixtures.py).
+Frequency: 433920000
+Preset: FuriHalSubGhzPresetOok650Async
+Protocol: Nexus-TH
+Id: 126
+Bit: 36
+Data: 00 00 00 07 E1 FB 5F 3A
+Batt: 1
+Hum: 58
+Ts: 1700000000
+Ch: 2
+Btn: 255
+Temp: -7.500000

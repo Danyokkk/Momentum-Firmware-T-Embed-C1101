@@ -127,7 +127,10 @@ static bool ws_protocol_auriol_ahfl_check(WSProtocolDecoderAuriol_AHFL* instance
     for(uint8_t i = 0; i < 9; i++) {
         checksum_calculated += (payload >> (i * 4)) & 0xF;
     }
-    return checksum_received == checksum_calculated;
+    /* Local fix: the checksum field is 6 bits wide, so the nibble sum is sent
+     * modulo 64. Upstream compared it unmasked, rejecting every frame whose
+     * sum is 64 or more, including the example in the header comment above. */
+    return checksum_received == (checksum_calculated & 0x3F);
 }
 
 /**

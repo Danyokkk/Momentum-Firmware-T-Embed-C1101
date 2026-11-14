@@ -1,0 +1,15 @@
+Filetype: Flipper SubGhz Key File
+Version: 1
+# The reading encoded into infactory_synth_raw.sub (written by make_synthetic_fixtures.py).
+Frequency: 433920000
+Preset: FuriHalSubGhzPresetOok650Async
+Protocol: inFactory-TH
+Id: 92
+Bit: 40
+Data: 00 00 00 5C D4 46 A6 72
+Batt: 1
+Hum: 67
+Ts: 1700000000
+Ch: 2
+Btn: 255
+Temp: -5.000000

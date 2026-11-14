@@ -1,0 +1,15 @@
+Filetype: Flipper SubGhz Key File
+Version: 1
+# The reading encoded into acurite_986_synth_raw.sub (written by make_synthetic_fixtures.py).
+Frequency: 433920000
+Preset: FuriHalSubGhzPresetOok650Async
+Protocol: Acurite-986
+Id: 15450
+Bit: 40
+Data: 00 00 00 B1 3C 5A C0 55
+Batt: 1
+Hum: 255
+Ts: 1700000000
+Ch: 2
+Btn: 255
+Temp: -25.000000

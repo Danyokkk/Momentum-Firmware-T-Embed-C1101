@@ -151,7 +151,11 @@ static bool ws_protocol_lacrosse_tx_check_crc(WSProtocolDecoderLaCrosse_TX* inst
  * Analysis of received data
  * @param instance Pointer to a WSBlockGeneric* instance
  */
-static void ws_protocol_lacrosse_tx_remote_controller(WSBlockGeneric* instance) {
+/* Local fix (docs/tembed-plus/PROVENANCE.md): returns false for a message type this
+ * decoder does not know instead of calling furi_crash(). The frame comes off
+ * the air and its only integrity check is a 4-bit sum, so upstream's crash
+ * could be triggered by any transmitter, or by noise. */
+static bool ws_protocol_lacrosse_tx_remote_controller(WSBlockGeneric* instance) {
     uint8_t msg_type = (instance->data >> 32) & 0x0F;
     instance->id = (((instance->data >> 28) & 0x0F) << 3) | (((instance->data >> 24) & 0x0F) >> 1);
 
@@ -166,12 +170,13 @@ static void ws_protocol_lacrosse_tx_remote_controller(WSBlockGeneric* instance) 
         //ToDo for verification, records are needed with sensors maintaining temperature and temperature for this standard
         instance->humidity = (uint8_t)msg_value;
     } else {
-        furi_crash("WS: WSProtocolLaCrosse_TX incorrect msg_type.");
+        return false;
     }
 
     instance->btn = WS_NO_BTN;
     instance->battery_low = WS_NO_BATT;
     instance->channel = WS_NO_CHANNEL;
+    return true;
 }
 
 void ws_protocol_decoder_lacrosse_tx_feed(void* context, bool level, uint32_t duration) {
@@ -242,8 +247,8 @@ void ws_protocol_decoder_lacrosse_tx_feed(void* context, bool level, uint32_t du
                     if(ws_protocol_lacrosse_tx_check_crc(instance)) {
                         instance->generic.data = instance->decoder.decode_data;
                         instance->generic.data_count_bit = LACROSSE_TX_BIT_SIZE;
-                        ws_protocol_lacrosse_tx_remote_controller(&instance->generic);
-                        if(instance->base.callback)
+                        if(ws_protocol_lacrosse_tx_remote_controller(&instance->generic) &&
+                           instance->base.callback)
                             instance->base.callback(&instance->base, instance->base.context);
                     }
                 }
@@ -300,7 +305,12 @@ SubGhzProtocolStatus
     furi_assert(context);
     WSProtocolDecoderLaCrosse_TX* instance = context;
     return ws_block_generic_deserialize_check_count_bit(
-        &instance->generic, flipper_format, ws_protocol_lacrosse_tx_const.min_count_bit_for_found);
+        &instance->generic,
+        flipper_format,
+        /* Local fix: the decoder saves LACROSSE_TX_BIT_SIZE (44) bits; upstream
+         * checked against min_count_bit_for_found (40) and so refused every
+         * key file it had written itself. */
+        LACROSSE_TX_BIT_SIZE);
 }
 
 void ws_protocol_decoder_lacrosse_tx_get_string(void* context, FuriString* output) {

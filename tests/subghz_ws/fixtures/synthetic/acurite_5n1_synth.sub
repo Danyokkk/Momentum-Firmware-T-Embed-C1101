@@ -1,0 +1,15 @@
+Filetype: Flipper SubGhz Key File
+Version: 1
+# The reading encoded into acurite_5n1_synth_raw.sub (written by make_synthetic_fixtures.py).
+Frequency: 433920000
+Preset: FuriHalSubGhzPresetOok650Async
+Protocol: Acurite 5n1
+Id: 3130
+Bit: 64
+Data: 8C 3A B8 84 D4 9C BE 30
+Batt: 1
+Hum: 62
+Ts: 1700000000
+Ch: 2
+Btn: 255
+Temp: -10.000000

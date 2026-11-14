@@ -1,0 +1,16 @@
+Filetype: Flipper SubGhz Key File
+Version: 1
+# Key file rebuilt by make_synthetic_fixtures.py from the reading in the real capture
+# ../acurite_592txr.sub (id 6315, channel A, 5.2 C, 83 %, battery OK).
+Frequency: 433920000
+Preset: FuriHalSubGhzPresetOok650Async
+Protocol: Acurite 592TXR
+Id: 6315
+Bit: 56
+Data: 00 D8 AB 44 53 88 9C 3E
+Batt: 0
+Hum: 83
+Ts: 1700000000
+Ch: 1
+Btn: 255
+Temp: 5.200000

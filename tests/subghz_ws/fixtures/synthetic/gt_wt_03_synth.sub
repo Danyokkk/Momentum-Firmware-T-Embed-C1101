@@ -1,0 +1,15 @@
+Filetype: Flipper SubGhz Key File
+Version: 1
+# The reading encoded into gt_wt_03_synth_raw.sub (written by make_synthetic_fixtures.py).
+Frequency: 433920000
+Preset: FuriHalSubGhzPresetOok650Async
+Protocol: GT-WT03
+Id: 90
+Bit: 41
+Data: 00 00 00 B4 61 DF A9 DE
+Batt: 1
+Hum: 48
+Ts: 1700000000
+Ch: 3
+Btn: 1
+Temp: -4.400000

@@ -1,0 +1,15 @@
+Filetype: Flipper SubGhz Key File
+Version: 1
+# The reading encoded into auriol_hg06061_synth_raw.sub (written by make_synthetic_fixtures.py).
+Frequency: 433920000
+Preset: FuriHalSubGhzPresetOok650Async
+Protocol: Auriol HG06061
+# Id is not asserted: the code takes bits 38..31 of a 37-bit frame, i.e. the top six id bits; encoded id = 0xA6
+Bit: 37
+Data: 00 00 00 14 D3 F4 9E 72
+# Batt is not asserted: the code reads bit 30, which is an id bit in this layout; encoded battery-OK bit = 1
+Hum: 57
+Ts: 1700000000
+Ch: 2
+Btn: 255
+Temp: -9.200000

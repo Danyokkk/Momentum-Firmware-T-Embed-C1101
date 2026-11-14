@@ -259,7 +259,12 @@ SubGhzProtocolStatus
     furi_assert(context);
     WSProtocolDecoderEmosE601x* instance = context;
     return ws_block_generic_deserialize_check_count_bit(
-        &instance->generic, flipper_format, ws_protocol_emose601x_const.min_count_bit_for_found);
+        &instance->generic,
+        flipper_format,
+        /* Local fix: a decoded frame is saved with Bit: 120; upstream checked
+         * against min_count_bit_for_found (24, the header length) and so
+         * refused every key file it had written itself. */
+        120);
 }
 
 void ws_protocol_decoder_emose601x_get_string(void* context, FuriString* output) {

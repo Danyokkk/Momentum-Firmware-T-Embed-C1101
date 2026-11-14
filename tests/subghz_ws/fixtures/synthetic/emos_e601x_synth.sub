@@ -1,0 +1,15 @@
+Filetype: Flipper SubGhz Key File
+Version: 1
+# The reading encoded into emos_e601x_synth_raw.sub (written by make_synthetic_fixtures.py).
+Frequency: 433920000
+Preset: FuriHalSubGhzPresetOok650Async
+Protocol: EMOS E601x
+Id: 94
+Bit: 120
+Data: 00 00 47 AF BF 3D 12 34
+# Batt is not asserted: the code reads bit 2 of the checksum byte; the header comment puts the battery flag in the flags nibble (encoded flags = 0100, battery good)
+Hum: 61
+Ts: 1700000000
+Ch: 2
+Btn: 255
+Temp: -6.500000

@@ -2,12 +2,17 @@
 
     python tests/subghz_ws/run.py
 
+Fixtures: real captures in fixtures/, synthetic waveforms in fixtures/synthetic/
+(written by make_synthetic_fixtures.py and committed; this script only verifies
+that they still match the generator). README.md explains the difference.
+
 Linux/macOS: gcc with ASan/UBSan. Windows: set ZIG_CC to zig.exe
 (pip install ziglang==0.13.0), same convention as tests/host/host_build.py.
 """
 from pathlib import Path
 import os
 import re
+import subprocess
 import sys
 
 root = Path(__file__).resolve().parents[2]
@@ -62,7 +67,11 @@ if problems:
     sys.exit(1)
 print(f"registry: {len(symbols)} weather decoders registered, included and under test")
 
-# 2. compile and run the replay tests
+# 2. the committed synthetic fixtures are what the generator produces (nothing is rewritten)
+if subprocess.run([sys.executable, str(here / "make_synthetic_fixtures.py"), "--check"]).returncode:
+    sys.exit(1)
+
+# 3. compile and run the replay tests
 out = root / "build_host" / "subghz_ws"
 out.mkdir(parents=True, exist_ok=True)
 exe = out / ("test_ws_decode.exe" if os.name == "nt" else "test_ws_decode")
@@ -92,5 +101,29 @@ run(
     ],
     check=True,
 )
-run([str(exe), str(here / "fixtures")], check=True)
+sys.stdout.flush()
+result = run([str(exe), str(here / "fixtures")], capture_output=True, text=True)
+sys.stdout.write(result.stdout)
+sys.stderr.write(result.stderr)
+if result.returncode:
+    print(f"FAIL: test_ws_decode exited with {result.returncode}")
+    sys.exit(1)
+
+# 4. say what the pass is worth: which decoders were checked against what
+coverage = re.search(
+    r"^coverage: decoders=(\d+) real=(\d+) synthetic=(\d+) uncovered=(\d+) roundtrip=(\d+)$",
+    result.stdout,
+    re.MULTILINE,
+)
+if not coverage:
+    print("FAIL: test_ws_decode did not report its fixture coverage")
+    sys.exit(1)
+total, real, synthetic, uncovered, roundtrip = map(int, coverage.groups())
+if uncovered or real + synthetic != total or total != len(symbols):
+    print(f"FAIL: {uncovered} of {len(symbols)} decoders have no fixture-backed positive test")
+    sys.exit(1)
 print("PASS: subghz weather-station decoders (host only; on-air reception is a separate hardware check)")
+print(f"      {total} decoders: {real} checked against real captures, {synthetic} against synthetic "
+      "fixtures only")
+print("      (synthetic = self-consistent with our reading of the decoder source, not proof "
+      f"against a real sensor); {roundtrip} encoder->decoder round trips")
