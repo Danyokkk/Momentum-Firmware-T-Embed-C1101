@@ -1,0 +1,10 @@
+App(
+    appid="ble_lab",
+    name="BLE Lab",
+    apptype=FlipperAppType.MENUEXTERNAL,
+    entry_point="ble_lab_app",
+    requires=["gui", "storage", "bt", "wifi"],
+    stack_size=6 * 1024,
+    icon="A_Sub1ghz_14",
+    order=68,
+)
