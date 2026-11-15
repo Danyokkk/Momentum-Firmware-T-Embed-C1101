@@ -193,7 +193,7 @@ Momentum firmware has no Wi-Fi; it relies on external ESP boards and apps
 | Momentum feature | In this firmware | Status | Verification |
 | --- | --- | --- | --- |
 | GPIO manual control, 5 V on GPIO | not built; the board exposes only I2C (Qwiic) and the UART pads | n/a (Flipper header does not exist) | — |
-| I2C scanner | prebuilt `i2c_tools_cli.fap` only | todo as a built-in (Qwiic bus is real) | — |
+| I2C scanner | built-in `i2cscan` CLI command: probes the external (Qwiic) bus and lists responding 7-bit addresses. Uses the port's real ESP I2C probe (`furi_hal_i2c_is_device_ready`), gated by `furi_hal_i2c_external_available()` | added (CLI) | build |
 | USB-UART bridge, I2C-SFP | no | n/a on a Plus / todo | — |
 | Expansion modules service, Video Game Module options | no | n/a | — |
 | GPIO pin remapping for external CC1101/NRF24/ESP/GPS | fixed by the board header | n/a | — |
@@ -277,7 +277,7 @@ such as "present / todo" counts once, under "present"):
 
 | present | added | todo | add-on | n/a | withheld |
 | --- | --- | --- | --- | --- | --- |
-| 47 | 20 | 27 | 5 | 11 | 38 |
+| 47 | 21 | 26 | 5 | 11 | 38 |
 
 The "todo" column is the remaining work towards parity. The largest items:
 the three extra IR universal remotes, a confirmed-per-action HID remote,

@@ -4,6 +4,7 @@
 #include <core/thread.h>
 #include <furi_hal.h>
 #include <furi_hal_info.h>
+#include <furi_hal_i2c.h>  // i2cscan command: external (Qwiic) bus probe
 #include <time.h>
 #include <lib/toolbox/args.h>
 #include <toolbox/pipe.h>
@@ -409,10 +410,37 @@ void cli_command_sleep(PipeSide* pipe, FuriString* args, void* context) {
     furi_string_free(duration_string);
 }
 
+static void cli_command_i2cscan(PipeSide* pipe, FuriString* args, void* context) {
+    UNUSED(pipe);
+    UNUSED(args);
+    UNUSED(context);
+
+    if(!furi_hal_i2c_external_available()) {
+        printf("No external I2C (Qwiic) bus on this board.\r\n");
+        return;
+    }
+
+    printf("Scanning the external I2C (Qwiic) bus...\r\n");
+    furi_hal_i2c_acquire(&furi_hal_i2c_handle_external);
+    uint8_t found = 0;
+    /* 7-bit addresses 0x08..0x77; 0x00..0x07 and 0x78..0x7F are reserved. The
+     * HAL also rejects reserved addresses, but keep the loop to the usable set. */
+    for(uint8_t addr = 0x08; addr <= 0x77; addr++) {
+        if(furi_hal_i2c_is_device_ready(&furi_hal_i2c_handle_external, addr << 1, 5)) {
+            printf("  0x%02X\r\n", addr);
+            found++;
+        }
+    }
+    furi_hal_i2c_release(&furi_hal_i2c_handle_external);
+    printf("%u device(s) found.\r\n", found);
+}
+
 void cli_main_commands_init(CliRegistry* registry) {
     cli_registry_add_command(
         registry, "!", CliCommandFlagParallelSafe, cli_command_info, (void*)true);
     cli_registry_add_command(registry, "info", CliCommandFlagParallelSafe, cli_command_info, NULL);
+    cli_registry_add_command(
+        registry, "i2cscan", CliCommandFlagParallelSafe, cli_command_i2cscan, NULL);
     cli_registry_add_command(
         registry, "device_info", CliCommandFlagParallelSafe, cli_command_info, (void*)true);
 
