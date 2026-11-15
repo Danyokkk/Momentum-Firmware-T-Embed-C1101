@@ -144,6 +144,21 @@ correction and the fixtures are synthetic, so this is self-consistency against
 an independent encoder, not proof against a real pager; nothing was received
 over the air. X10, AllStar Firefly and Nord Ice are build-verified only.
 
+A second batch followed: `hormann_bisecur.{c,h}` from Momentum `d3f89df`, and
+from Unleashed `1a5676a` the helper `common.{c,h}` plus `doorbell32`,
+`keyfinder2`, `freezer`, `faac_tm`, `proteco`, `telcoma_edge` and `belkorn`
+(all `lib/subghz/protocols/`, byte-identical, registered in
+`protocol_items.{c,h}`). The Unleashed protocols use that project's
+`SubGhzProtocolDecoderCommon`/`EncoderCommon` wrapper (`common.c`), which is
+absent from this port's Momentum lineage; it grafted on unchanged because the
+port's `SubGhzBlockDecoder`/`SubGhzBlockGeneric` layouts match (the
+`_Static_assert` offset checks in `common.h` pass at compile time). Hörmann
+BiSecur and BelKorn are rolling-code (Dynamic), so the transmitter gate makes
+them decode-only; the rest are static. All are build-verified only. A real
+Freezer capture exists in Unleashed's unit-test resources
+(`applications/debug/unit_tests/resources/unit_tests/subghz/freezer*.sub`) for
+a later host test. Prastel was left out: it needs Unleashed's `public_api.h`.
+
 ### 6. Web flasher and CI
 
 | | |

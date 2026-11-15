@@ -97,4 +97,15 @@
 #include "x10.h"
 #include "allstar_firefly.h"
 #include "nord_ice.h"
+/* hormann_bisecur from Momentum; the rest from Unleashed (lib/subghz/protocols,
+ * via their common.{c,h} helper). hormann_bisecur and belkorn are rolling-code
+ * (Dynamic) -> decode-only via the transmitter gate; the others are static. */
+#include "hormann_bisecur.h"
+#include "doorbell32.h"
+#include "keyfinder2.h"
+#include "freezer.h"
+#include "faac_tm.h"
+#include "proteco.h"
+#include "telcoma_edge.h"
+#include "belkorn.h"
 

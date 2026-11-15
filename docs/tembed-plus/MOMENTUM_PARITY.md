@@ -50,10 +50,11 @@ Hardware: CC1101 on SPI2 (CS 12, GDO0 3, GDO2 38), band switch GPIO47/48.
 | TPMS Schrader GG4 (commented out in Momentum) | active, plus Ford, Renault, Citroën, PMV-107J | present | build |
 | POCSAG (commented out in Momentum) | receive-only pager decoder, ported and registered; FM, decode only (no Send flag, null encoder) | added | host (`tests/subghz_pocsag`: 1200/512 bps, numeric + alphanumeric, cross-checked against an independent encoder) |
 | X10 (commented out in Momentum) | ported and registered; static code (310 MHz AM) | added | build |
-| Hörmann BiSecur (commented out in Momentum) | no (868 MHz FSK rolling code; decode-only candidate) | todo | — |
+| Hörmann BiSecur (commented out in Momentum) | ported and registered; 868 MHz FSK rolling code (Dynamic), so decode-only via the transmitter gate | added | build |
 | AllStar Firefly, Nord Ice | both ported and registered. Nord Ice is static; AllStar Firefly is rolling-code (Dynamic), so the lab transmitter gate makes it decode-only | added | build |
-| Unleashed-only: Doorbell32, KeyFinder2, Freezer | no | todo (static codes; upstream fixtures exist for Freezer) | — |
-| Unleashed-only: BelKorn, FAAC TM, Prastel, Proteco, Telcoma EDGE | no | todo as decode-only | — |
+| Unleashed-only: Doorbell32, KeyFinder2, Freezer | ported and registered (static codes), via the Unleashed `common.{c,h}` helper | added | build (a real Freezer capture exists in Unleashed's test resources for a later host test) |
+| Unleashed-only: BelKorn, FAAC TM, Proteco, Telcoma EDGE | ported and registered. BelKorn is rolling-code (Dynamic) → decode-only via the gate; FAAC TM, Proteco, Telcoma EDGE are static | added | build |
+| Unleashed-only: Prastel | no (needs Unleashed's `public_api.h` layer; rolling-code) | todo as decode-only | — |
 | Transmit a saved static-code or RAW signal | yes, inside the chosen region's bands | present + region gate added | build; region table host-tested |
 | Region lock (Momentum: region service + "Bypass Region Lock") | region presets, default "Not set" = no transmit; no bypass | added | host (`tests/subghz_region`), build |
 | "Extend Freq Bands" (281–361, 378–481, 749–962 MHz) | switch ignored in the HAL | withheld | build |
@@ -260,7 +261,7 @@ reviewed those; `make_sd_bundle.py` leaves them out unless asked.
 
 | Unleashed has, Momentum lacks | Decision |
 | --- | --- |
-| 8 Sub-GHz protocols (listed in section 1) | todo; gate remotes as decode-only |
+| 8 Sub-GHz protocols (listed in section 1) | 7 added (Doorbell32, KeyFinder2, Freezer, BelKorn, FAAC TM, Proteco, Telcoma EDGE); Prastel still todo. Rolling-code ones are decode-only |
 | "Regional TX restrictions removed", extended range | opposite of this build's policy |
 | LF-RFID and iButton fuzzers, Sub-GHz bruteforce, mfkey, Nice O-Code, Security+ PIN, seed capturer | withheld |
 | Menu styles Grid, Macintosh, 3D | todo (cosmetic) |
@@ -276,11 +277,12 @@ such as "present / todo" counts once, under "present"):
 
 | present | added | todo | add-on | n/a | withheld |
 | --- | --- | --- | --- | --- | --- |
-| 47 | 14 | 32 | 5 | 11 | 38 |
+| 47 | 17 | 30 | 5 | 11 | 38 |
 
 The "todo" column is the remaining work towards parity. The largest items:
-the three extra IR universal remotes, the remaining Sub-GHz decoders (Hörmann
-BiSecur and the Unleashed-only static codes), a confirmed-per-action HID
-remote, System/Clock settings, archive search and file-browser options, an
-on-device backup, and a rebuilt mesh. POCSAG, X10, AllStar Firefly and Nord
-Ice were added in 2026-11.
+the three extra IR universal remotes, a confirmed-per-action HID remote,
+System/Clock settings, archive search and file-browser options, an on-device
+backup, and a rebuilt mesh. Added in 2026-11: POCSAG, X10, AllStar Firefly,
+Nord Ice, Hörmann BiSecur, Doorbell32, KeyFinder2, Freezer, FAAC TM, Proteco,
+Telcoma EDGE and BelKorn (12 Sub-GHz protocols). Only Prastel remains, pending
+its Unleashed `public_api.h` layer.

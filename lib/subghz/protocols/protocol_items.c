@@ -56,6 +56,14 @@ const SubGhzProtocol* const subghz_protocol_registry_items[] = {
      * gate in transmitter.c makes it decode-only. */
     &subghz_protocol_pocsag,        &subghz_protocol_x10,
     &subghz_protocol_allstar_firefly, &subghz_protocol_nord_ice,
+    /* hormann_bisecur from Momentum; the rest from Unleashed. hormann_bisecur
+     * and belkorn are rolling-code (Dynamic), so the transmitter gate makes
+     * them decode-only; doorbell32, keyfinder2, freezer, faac_tm, proteco and
+     * telcoma_edge are static. */
+    &subghz_protocol_hormann_bisecur, &subghz_protocol_doorbell32,
+    &subghz_protocol_keyfinder2,    &subghz_protocol_freezer,
+    &subghz_protocol_faac_tm,       &subghz_protocol_proteco,
+    &subghz_protocol_telcoma_edge,  &subghz_protocol_belkorn,
 };
 
 const SubGhzProtocolRegistry subghz_protocol_registry = {

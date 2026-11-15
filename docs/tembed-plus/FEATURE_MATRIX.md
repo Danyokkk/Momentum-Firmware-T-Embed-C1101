@@ -70,7 +70,8 @@ ships it and it still compiles", not "it works".
 | Code brute-forcer | excluded | image check | | menu entry absent |
 | **POCSAG pager decoder** (from Momentum) | new | host test: cross-checked against an independent encoder (1200/512 bps, numeric + alphanumeric, multi-batch) | receive-only (no Send flag, null encoder); FM preset. `tests/subghz_pocsag` | tune an FM pager frequency you are licensed to monitor; a page shows RIC + text |
 | **X10, Nord Ice** (static), **AllStar Firefly** (rolling, from Momentum) | new | build | X10 and Nord Ice are static (transmit only inside a region, like the other static protocols); AllStar Firefly is rolling-code, so TX is refused — decode only | decode one of your own remotes of these types |
-| Hörmann BiSecur, other Momentum/Unleashed-only protocols | needs porting | — | remaining candidates listed in `PROVENANCE.md` | — |
+| **Hörmann BiSecur, Doorbell32, KeyFinder2, Freezer, FAAC TM, Proteco, Telcoma EDGE, BelKorn** (from Momentum/Unleashed) | new | build | Hörmann BiSecur and BelKorn are rolling-code → decode-only via the gate; the rest static. Unleashed ones use their `common.c` helper | decode one of your own remotes of these types |
+| Prastel and any further Momentum/Unleashed-only protocols | needs porting | — | Prastel needs Unleashed's `public_api.h`; see `PROVENANCE.md` | — |
 | Arbitrary SDR / wideband capture | unsupported | — | CC1101 is a narrowband FSK/OOK transceiver | — |
 
 ## Infrared
