@@ -54,8 +54,12 @@ def build_board(board: str, target: str, idf: Path, env: dict[str, str]) -> dict
         defaults.append(f"sdkconfig.defaults.{board}")
     # Each board resolves managed components against its own copy of the lock,
     # so building another IDF target cannot rewrite the repository's pinned
-    # dependencies.lock (see the note in CMakeLists.txt).
-    board_lock = REPO_ROOT / build_dir / "dependencies.lock"
+    # dependencies.lock (see the note in CMakeLists.txt). The copy is kept out
+    # of the build directory: `idf.py set-target` runs fullclean first, which
+    # refuses a non-empty directory that has no CMakeCache.txt yet (a fresh
+    # checkout) and empties one that has (deleting the copy, so the component
+    # manager would re-solve unpinned).
+    board_lock = REPO_ROOT / "build_x_locks" / f"dependencies.{board}.lock"
     board_lock.parent.mkdir(parents=True, exist_ok=True)
     if not board_lock.is_file():
         shutil.copyfile(REPO_ROOT / "dependencies.lock", board_lock)

@@ -50,13 +50,22 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Build
+        id: build
         env:
           ESP_IDF_DIR: /opt/esp/idf
           IDF_TOOLS_PATH: /opt/esp
-        run: python3 tools/tembed_plus/cross_build.py --boards "${{ matrix.board }}" --results results.json
+        run: >-
+          python3 tools/tembed_plus/cross_build.py --boards "${{ matrix.board }}" --results results.json
+          2>&1 | tee cross-build-output.log
       - name: Result
         if: always()
         run: cat results.json 2>/dev/null || echo "no result file"
+      # Job logs need a signed-in viewer; annotations show on the run page.
+      - name: Show build errors on the run page
+        if: failure() && steps.build.outcome == 'failure'
+        run: >-
+          python3 tools/ci/annotate_log.py "build_x_${{ matrix.board }}.log" cross-build-output.log
+          --title "${{ matrix.board }} build failed"
       - name: Keep the build log on failure
         if: failure()
         uses: actions/upload-artifact@v7

@@ -76,13 +76,15 @@ jobs:
           echo "Build $label ($channel), firmware label $firmware_label"
 
       - name: Build and check the image
+        id: build
         env:
           ESP_IDF_DIR: /opt/esp/idf
           IDF_TOOLS_PATH: /opt/esp
           FLIPPER_BUILD_LABEL: ${{ steps.meta.outputs.firmware_label }}
-        run: python3 tools/tembed_plus/build.py build
+        run: python3 tools/tembed_plus/build.py build 2>&1 | tee build-output.log
 
       - name: Package for the release and the web flasher
+        id: package
         run: >-
           python3 tools/web/package_build.py
           --build-dir build_t_embed_plus
@@ -93,6 +95,15 @@ jobs:
           --commit "$GITHUB_SHA"
           --date "${{ steps.meta.outputs.date }}"
           --repo "$GITHUB_REPOSITORY"
+          2>&1 | tee package-output.log
+
+      # Job logs need a signed-in viewer; annotations show on the run page.
+      - name: Show build errors on the run page
+        if: failure() && steps.build.outcome == 'failure'
+        run: python3 tools/ci/annotate_log.py build-output.log --title "T-Embed Plus build failed"
+      - name: Show packaging errors on the run page
+        if: failure() && steps.package.outcome == 'failure'
+        run: python3 tools/ci/annotate_log.py package-output.log --title "Packaging failed"
 
       - uses: actions/upload-artifact@v7
         with:
