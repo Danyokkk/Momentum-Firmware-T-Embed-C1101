@@ -51,6 +51,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Icon compiler dependency
+        run: pip install Pillow  # tools/fam/compile_icons.py (apps with icon assets)
+
       - name: Describe this build
         id: meta
         run: |

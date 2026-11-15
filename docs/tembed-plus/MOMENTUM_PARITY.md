@@ -66,7 +66,7 @@ Hardware: CC1101 on SPI2 (CS 12, GDO0 3, GDO2 38), band switch GPIO47/48.
 | Radio Settings: external module, GPS baud, debug pin | no external module on this port; debug pin only in debug mode | n/a / present | build |
 | Static/hopper frequency lists (Momentum app > Protocols) | port uses its `subghz/assets` setting files | present (file-based) | build |
 | GPS "Subdriving" (location stamped on captures) | no; GPIO43/44 are the nRF24's on a Plus | add-on (and conflicts with the Plus module) | — |
-| Sub-GHz Remote (map saved signals to buttons) | source present, not built | todo (static/RAW only) | — |
+| Sub-GHz Remote (map saved signals to buttons) | source present; bundles its own `helpers/txrx/subghz_txrx.c`, which duplicates the main app's symbols when built in-image | todo (needs txrx dedup or FAP packaging) | — |
 | Playlist | yes (port feature) | present | build |
 | Jammer (port feature, not Momentum) | removed | withheld | image |
 | Bruteforce (port feature; external app in Momentum/Unleashed) | removed | withheld | image |
@@ -215,8 +215,8 @@ Momentum firmware has no Wi-Fi; it relies on external ESP boards and apps
 | Notification settings: volume, backlight time, LED brightness, stealth | yes; no vibro, no LCD contrast | present / n/a | build |
 | Power settings: battery info, auto power-off, limit charge, reboot | yes, plus light-sleep options | present | build |
 | Storage settings: SD info, format, unmount, benchmark, factory reset | yes | present | build |
-| System settings: units, time/date format, log level, hand orientation, sleep method | app not built | todo | — |
-| Clock & alarm settings | not built; a stopwatch "Clock" app exists | todo | — |
+| System settings: units, time/date format, log level, hand orientation, sleep method | `system_settings` app now built (added to `fam_config.py APPS`) | added | build |
+| Clock & alarm settings | still not built: `clock_settings` needs an RTC-alarm HAL this ESP32 port lacks (`furi_hal_rtc_set_alarm`, `furi_hal_clock.h`). The stopwatch "Clock" app exists | todo (needs HAL) | — |
 | Input settings (vibro) | no | n/a | — |
 | Name and shell colour spoofing | "Spoofing Options" app | present | build |
 | Dolphin level/XP editing | no | todo (cosmetic) | — |
@@ -277,7 +277,7 @@ such as "present / todo" counts once, under "present"):
 
 | present | added | todo | add-on | n/a | withheld |
 | --- | --- | --- | --- | --- | --- |
-| 47 | 17 | 30 | 5 | 11 | 38 |
+| 47 | 18 | 29 | 5 | 11 | 38 |
 
 The "todo" column is the remaining work towards parity. The largest items:
 the three extra IR universal remotes, a confirmed-per-action HID remote,

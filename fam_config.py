@@ -32,6 +32,7 @@ APPS = [
     "spoofing_settings",
     "notification_settings",
     "interface_settings",
+    "system_settings",  # units, date/time format, log level, orientation, sleep
     "desktop_settings",
     "desktop",
     "archive",
@@ -41,8 +42,15 @@ APPS = [
     "example_apps_assets",
     "example_number_input",
     "clock",
+    # "clock_settings" / "clock_settings_start" need an RTC-alarm HAL this
+    # ESP32 port lacks (furi_hal_rtc_set_alarm / furi_hal_clock.h). Left out
+    # until that HAL is implemented; the Clock stopwatch app above still builds.
     "bad_usb",
     "subghz",
+    # "subghz_remote" bundles its own copy of helpers/txrx/subghz_txrx.c, which
+    # collides with the main Sub-GHz app's (duplicate symbols) when built into
+    # the image. It is a standalone FAP upstream. Left out until its txrx helper
+    # is deduplicated against the main app or it is packaged as a FAP.
     "cli_subghz",
     "subghz_load_dangerous_settings",
     "passport",

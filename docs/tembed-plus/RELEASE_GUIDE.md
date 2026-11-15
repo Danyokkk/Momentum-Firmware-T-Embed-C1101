@@ -39,7 +39,7 @@ Requirements, pinned in `tools/tembed_plus/toolchain.lock.json`:
 | ESP-IDF | v5.4.1 (`4c2820d`) with the `esp32s3` tools |
 | Compiler | xtensa-esp-elf esp-14.2.0_20241119 |
 | CMake / Ninja | 3.30.2 / 1.12.1 |
-| Python | 3.12 |
+| Python | 3.12, with **Pillow** (`pip install Pillow`) for the icon compiler (`tools/fam/compile_icons.py`, used by apps with icon assets) |
 | Managed components | `dependencies.lock` (esp_tinyusb 1.7.6~2, tinyusb 0.21.0~4, led_strip 3.0.3, mdns 1.12.0) |
 
 Install the SDK once (Windows, PowerShell; avoid paths with spaces for the SDK
