@@ -141,7 +141,7 @@ composite installed on demand.
 | Momentum feature | In this firmware | Status | Verification |
 | --- | --- | --- | --- |
 | BadKB / BadUSB script runner (USB and BLE), ID/MAC spoofing options | removed | withheld | image |
-| USB Remote / Bluetooth Remote (keyboard, media, mouse, presenter, …) | source present (`hid_usb`, `hid_ble`), not built | todo: visible, user-driven remote with on-device confirmation. Mouse jiggler "stealth" mode: withheld | — |
+| USB Remote / Bluetooth Remote (keyboard, media, mouse, presenter, numpad, PTT, …) | both built now (`hid_usb`, `hid_ble` → MENUEXTERNAL in `APPS`). User-driven: every keystroke is a deliberate button press on the device, not a script. The hidden "Mouse Jiggler Stealth" mode is withheld (source excluded + `#ifndef FURI_PROFILE_LAB` guards; verified absent from the ELF) | added | build, image (stealth absent) |
 | U2F | yes | present | build |
 | USB serial console (CDC) | yes | present | build |
 | qFlipper/RPC bridge over USB | yes | present | build |
@@ -155,7 +155,7 @@ composite installed on demand.
 | --- | --- | --- | --- |
 | BLE stack, on/off, unpair all | yes (Bluedroid, BLE 4.2 feature set) | present | build |
 | Mobile-app serial/RPC profile | yes | present | build |
-| BLE HID profile | profile code present; no app uses it | todo with the HID remote | — |
+| BLE HID profile | used by the Bluetooth Remote (`hid_ble`) now that it is built | added | build |
 | FindMy Flipper (broadcast as a tracker tag) | not built | withheld | — |
 | BLE Spam (external app) | removed | withheld | image |
 | JS `blebeacon` | removed | withheld | image |
@@ -277,7 +277,7 @@ such as "present / todo" counts once, under "present"):
 
 | present | added | todo | add-on | n/a | withheld |
 | --- | --- | --- | --- | --- | --- |
-| 47 | 18 | 29 | 5 | 11 | 38 |
+| 47 | 20 | 27 | 5 | 11 | 38 |
 
 The "todo" column is the remaining work towards parity. The largest items:
 the three extra IR universal remotes, a confirmed-per-action HID remote,

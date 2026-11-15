@@ -1,6 +1,6 @@
 #include "hid.h"
 #include <extra_profiles/hid_profile.h>
-#include <profiles/serial_profile.h>
+#include <extra_profiles/serial_profile.h>
 #include "views.h"
 #include <notification/notification_messages.h>
 #include <dolphin/dolphin.h>
@@ -107,7 +107,10 @@ static void bt_hid_connection_status_changed_callback(BtStatus status, void* con
     hid_mouse_set_connected_status(hid->hid_mouse, connected);
     hid_mouse_clicker_set_connected_status(hid->hid_mouse_clicker, connected);
     hid_mouse_jiggler_set_connected_status(hid->hid_mouse_jiggler, connected);
+#ifndef FURI_PROFILE_LAB
+    /* Lab profile: the stealth (hidden) mouse jiggler is withheld. */
     hid_mouse_jiggler_stealth_set_connected_status(hid->hid_mouse_jiggler_stealth, connected);
+#endif
     hid_ptt_set_connected_status(hid->hid_ptt, connected);
     hid_tiktok_set_connected_status(hid->hid_tiktok, connected);
 }
@@ -210,12 +213,14 @@ Hid* hid_alloc() {
         app->view_dispatcher,
         HidViewMouseJiggler,
         hid_mouse_jiggler_get_view(app->hid_mouse_jiggler));
-    // Mouse jiggler stealth view
+#ifndef FURI_PROFILE_LAB
+    // Mouse jiggler stealth view (withheld in the lab profile)
     app->hid_mouse_jiggler_stealth = hid_mouse_jiggler_stealth_alloc(app);
     view_dispatcher_add_view(
         app->view_dispatcher,
         HidViewMouseJigglerStealth,
         hid_mouse_jiggler_stealth_get_view(app->hid_mouse_jiggler_stealth));
+#endif
 
     // PushToTalk view
     app->hid_ptt_menu = hid_ptt_menu_alloc(app);
@@ -263,8 +268,10 @@ void hid_free(Hid* app) {
     hid_mouse_clicker_free(app->hid_mouse_clicker);
     view_dispatcher_remove_view(app->view_dispatcher, HidViewMouseJiggler);
     hid_mouse_jiggler_free(app->hid_mouse_jiggler);
+#ifndef FURI_PROFILE_LAB
     view_dispatcher_remove_view(app->view_dispatcher, HidViewMouseJigglerStealth);
     hid_mouse_jiggler_stealth_free(app->hid_mouse_jiggler_stealth);
+#endif
     view_dispatcher_remove_view(app->view_dispatcher, HidViewPushToTalkMenu);
     hid_ptt_menu_free(app->hid_ptt_menu);
     view_dispatcher_remove_view(app->view_dispatcher, HidViewPushToTalk);

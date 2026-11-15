@@ -137,8 +137,9 @@ ships it and it still compiles", not "it works".
 
 | Feature | Status | Evidence | Notes |
 | --- | --- | --- | --- |
-| BadUSB / BadKB script runner (USB and BLE) | excluded | image check | |
-| Visible, user-started HID demo with preview and confirmation | needs porting | — | not written |
+| BadUSB / BadKB script runner (USB and BLE) | excluded | image check | the script runner (`bad_usb`) stays excluded |
+| **USB Keyboard & Mouse / Bluetooth Remote** (`hid_usb`, `hid_ble`) | new | build; image check (stealth absent) | user-driven HID: keyboard, numpad, media, mouse, presenter (keynote), push-to-talk. Every keystroke is a deliberate device-button press, not a script. Appears in the main menu |
+| Mouse Jiggler Stealth (hidden keep-awake) | excluded | image check | source excluded + `#ifndef FURI_PROFILE_LAB`; the plain, on-screen Mouse Jiggler remains |
 
 ## Data handling
 
@@ -180,7 +181,7 @@ The follow-up brief settled what the first pass had left open:
 
 - No hardware validation of anything.
 - No signed updates (integrity check and rollback only).
-- No HID demonstration app, no on-device backup, no rebuilt mesh.
+- No on-device backup, no rebuilt mesh. (A user-driven USB/BLE HID remote is built now.)
 - Region presets limit frequency only, not power or duty cycle.
 - NFC: some card-level menu items still appear and lead to the explanation
   screen; an external app with its own NFC code is outside the gates.

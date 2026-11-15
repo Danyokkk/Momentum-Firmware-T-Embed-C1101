@@ -24,7 +24,8 @@ summary.
 | NFC | read-only app: identify, read, parse, save. 39 write/emulate/clone/unlock/key-attack scenes replaced by an explanation screen; card emulation refused in the PN532 driver |
 | Wi-Fi | WiFi Lab: passive scan, signal/channel list, join own network with confirmation, opt-in CSV export; scans are passive in the HAL |
 | Bluetooth | BLE Lab: passive scan with name, vendor, signal, location-tag hint, opt-in CSV export |
-| System | TLS verification on; OTA rollback; network updater that used unverified TLS removed; firmware version carries the commit or tag |
+| System | TLS verification on; OTA rollback; network updater that used unverified TLS removed; firmware version carries the commit or tag; System settings app built |
+| HID | user-driven USB Keyboard & Mouse and Bluetooth Remote (keyboard, numpad, media, mouse, presenter, push-to-talk); the hidden "stealth" mouse jiggler is withheld. BadUSB script runner stays excluded |
 | Distribution | web flasher on GitHub Pages; CI with sanitizer host tests, image build and checks, packaging and build-provenance attestations; tagged releases |
 | Docs | feature matrix with evidence levels, Momentum parity matrix, board profile, provenance and licences, release guide |
 

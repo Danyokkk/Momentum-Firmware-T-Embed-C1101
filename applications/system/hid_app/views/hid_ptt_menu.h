@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gui/view.h>
+#include <furi/core/furi_string.h>
 
 typedef struct Hid Hid;
 typedef struct HidPushToTalkMenu HidPushToTalkMenu;

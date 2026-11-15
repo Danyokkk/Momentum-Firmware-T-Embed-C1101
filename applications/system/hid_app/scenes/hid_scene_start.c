@@ -69,12 +69,15 @@ void hid_scene_start_on_enter(void* context) {
         HidSubmenuIndexMouseJiggler,
         hid_scene_start_submenu_callback,
         app);
+#ifndef FURI_PROFILE_LAB
+    /* Lab profile: the stealth (hidden) mouse jiggler is withheld. */
     submenu_add_item(
         app->submenu,
         "Mouse Jiggler Stealth",
         HidSubmenuIndexMouseJigglerStealth,
         hid_scene_start_submenu_callback,
         app);
+#endif
     submenu_add_item(
         app->submenu,
         "PushToTalk",
@@ -149,9 +152,11 @@ bool hid_scene_start_on_event(void* context, SceneManagerEvent event) {
             case HidSubmenuIndexMouseJiggler:
                 view_id = HidViewMouseJiggler;
                 break;
+#ifndef FURI_PROFILE_LAB
             case HidSubmenuIndexMouseJigglerStealth:
                 view_id = HidViewMouseJigglerStealth;
                 break;
+#endif
             case HidSubmenuIndexPushToTalk:
                 view_id = HidViewPushToTalkMenu;
                 break;

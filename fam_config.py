@@ -42,6 +42,8 @@ APPS = [
     "example_apps_assets",
     "example_number_input",
     "clock",
+    "hid_ble",  # Bluetooth Remote (user-driven HID: keyboard, media, mouse, PTT)
+    "hid_usb",  # USB Keyboard & Mouse remote (user-driven)
     # "clock_settings" / "clock_settings_start" need an RTC-alarm HAL this
     # ESP32 port lacks (furi_hal_rtc_set_alarm / furi_hal_clock.h). Left out
     # until that HAL is implemented; the Clock stopwatch app above still builds.
@@ -180,6 +182,11 @@ LAB_EXCLUDED_APPS = {
 }
 
 LAB_EXCLUDED_SOURCES = {
+    # HID remote: user-driven only. The stealth (hidden) mouse jiggler is
+    # withheld; its references are under #ifndef FURI_PROFILE_LAB in hid.c and
+    # scenes/hid_scene_start.c.
+    "hid_ble": ["views/hid_mouse_jiggler_stealth.c"],
+    "hid_usb": ["views/hid_mouse_jiggler_stealth.c"],
     # nRF24: only module detection and the receive-only spectrum view remain.
     "nrf24": [
         "scenes/scene_jam*.c",
