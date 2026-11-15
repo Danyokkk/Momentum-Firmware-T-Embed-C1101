@@ -5,6 +5,31 @@ explicit permission to test. It has not been run on a physical device yet (see
 `FEATURE_MATRIX.md`); treat the first flash as a bring-up, with the recovery
 steps below ready.
 
+## 0. The easy way: the web flasher
+
+<https://danyokkk.github.io/Momentum-Firmware-T-Embed-C1101/>, in Chrome, Edge
+or Opera on a computer:
+
+1. Choose a build (the newest release is preselected; "Development build" is
+   the newest commit on `main`).
+2. Plug the T-Embed in, press **Connect** and pick "USB JTAG/serial debug
+   unit". The page refuses anything that is not an ESP32-S3 with 16 MB flash.
+3. Leave **Back up the device first** ticked and press **Install**.
+
+What the page does, in order: downloads the four files and checks each one's
+size, SHA-256 and MD5 against the build manifest; reads the whole 16 MB flash in
+256 KB chunks, checks each chunk against the device's own MD5 and saves it as
+`t-embed-backup-<date>.bin`; writes the bootloader, partition table, firmware
+and OTA boot selection at the offsets from the build's partition table; has the
+device check its MD5 of every written region; restarts it. Writing the OTA boot
+selection matters: without it a device that last ran from the second app slot
+would keep starting the old firmware.
+
+Under **Advanced** the page can also restore a backup, make a backup without
+installing, erase the flash, and list the files with a ready esptool command.
+
+The rest of this guide covers doing the same by hand.
+
 ## 1. Build
 
 Requirements, pinned in `tools/tembed_plus/toolchain.lock.json`:
@@ -231,8 +256,74 @@ tests (they need `gcc`, or on Windows `pip install ziglang==0.13.0` and
 `ZIG_CC` set to its `zig.exe`). Upstream's own offline suite is
 `python tests/run_t_embed_features.py`.
 
+```bash
+node tests/web/test_md5.mjs
+```
+
+The last one checks the web flasher's MD5 code against RFC 1321 and Node's
+crypto (CI runs it; Node is not needed for anything else).
+
 To compile every board profile the repository carries (compile check only):
 
 ```bash
 python tools/tembed_plus/cross_build.py
 ```
+
+## 11. Continuous integration, releases and the web flasher
+
+Two workflows in `.github/workflows/`:
+
+| Workflow | Runs on | Does |
+| --- | --- | --- |
+| `firmware.yml` | pushes to `main`, tags `v*`, pull requests, manual | host tests with gcc ASan/UBSan; T-Embed Plus build in the `espressif/idf:v5.4.1` container, with the SDK, dependency-lock and image checks of `build.py`; packaging; build-provenance attestation; on `main` it deploys the web flasher, on a tag it publishes a GitHub release |
+| `boards.yml` | pushes to `main`, pull requests, manual | compile check of the ten other board profiles; thormini is allowed to fail (upstream link error) |
+
+Upstream's `build.yml` and `native-tools-tests.yml` are kept but run only by
+hand; `protopirate-tests.yml` is unchanged.
+
+**One-time setup:** in the repository, Settings &rarr; Pages &rarr; Build and
+deployment &rarr; Source: **GitHub Actions**. A workflow cannot switch Pages on
+with its own token, so until this is done the deploy step fails with a message
+saying Pages is not enabled. Then re-run the workflow (Actions &rarr; Firmware
+and web flasher &rarr; Run workflow).
+
+**Making a release:**
+
+```bash
+git tag v0.1.0
+```
+
+```bash
+git push origin v0.1.0
+```
+
+The tag build attaches the four firmware files, `manifest.json`, `SHA256SUMS`
+and `sd_bundle.zip` to a new GitHub release (tags containing `-`, such as
+`v0.2.0-rc.1`, become pre-releases), then starts a deploy from `main` so the web
+flasher lists it. The site offers the three newest releases plus the current
+development build.
+
+**What the pipeline guarantees:** files on the site and in releases come only
+from this repository's Actions runs; the build stops if the SDK is modified, if
+the pinned managed components were re-resolved, or if a left-out feature is
+linked; packaging stops if any offset disagrees with the partition table or an
+image is not for the ESP32-S3; the site builder re-checks every file's SHA-256
+and only accepts esptool-js if it matches the integrity pinned in
+`web/vendor.json`. Anyone can confirm a file's origin with
+`gh attestation verify <file> --repo Danyokkk/Momentum-Firmware-T-Embed-C1101`.
+
+**Building the site locally** (after a firmware build):
+
+```bash
+python tools/web/package_build.py --out dist/package --label local-test --channel dev
+```
+
+```bash
+python tools/web/build_site.py --out dist/site --package dist/package --repo Danyokkk/Momentum-Firmware-T-Embed-C1101
+```
+
+```bash
+python -m http.server 8765 --directory dist/site
+```
+
+Then open <http://localhost:8765> (Web Serial needs `localhost` or HTTPS).

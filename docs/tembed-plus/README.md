@@ -8,8 +8,10 @@ passive by default and scoped to equipment you own or are authorised to test.
 Momentum is the feature reference; Unleashed is a secondary source for
 protocols Momentum lacks.
 
-**State in one line:** it builds reproducibly and the excluded features are
-verifiably absent from the image; it has not been run on a device.
+**State in one line:** it builds reproducibly, the excluded features are
+verifiably absent from the image, and CI publishes each build to a web
+flasher at <https://danyokkk.github.io/Momentum-Firmware-T-Embed-C1101/>; it
+has not been run on a device.
 
 | Document | What it answers |
 | --- | --- |
@@ -18,7 +20,7 @@ verifiably absent from the image; it has not been run on a device.
 | [MOMENTUM_PARITY.md](MOMENTUM_PARITY.md) | every Momentum feature category mapped to this target: present, added, todo, add-on, n/a or withheld |
 | [BOARD_PROFILE.md](BOARD_PROFILE.md) | Plus hardware, pin map, shared-bus conflicts, open hardware questions |
 | [PROVENANCE.md](PROVENANCE.md) | upstream commits reviewed, what was imported from where, licences |
-| [RELEASE_GUIDE.md](RELEASE_GUIDE.md) | build, back up, flash, SD card, update, rollback, recovery, RF rules |
+| [RELEASE_GUIDE.md](RELEASE_GUIDE.md) | web flasher; build, back up, flash, SD card, update, rollback, recovery, RF rules; CI and releases |
 
 ## What this branch changes
 
@@ -45,6 +47,12 @@ verifiably absent from the image; it has not been run on a device.
    tests; a small passive Wi-Fi tool (`wifi_lab`); passive scanning in the
    Wi-Fi HAL; TLS verification on; OTA rollback; a pinned build wrapper, an
    image checker and an SD bundle tool under `tools/tembed_plus/`.
+6. **Distribution (third pass):** a browser flasher (`web/`, assembled by
+   `tools/web/`) on GitHub Pages; GitHub Actions that run the host tests with
+   sanitizers, build and check the image, package it, attest it, deploy the
+   site from `main` and publish a release for every `v*` tag
+   (`.github/workflows/firmware.yml`, plus `boards.yml` for the other boards);
+   and the commit or tag in the firmware version on the About screen.
 
 ## How the port boots (audit summary)
 
@@ -76,6 +84,7 @@ The board is chosen with `-DFLIPPER_BOARD=lilygo_t_embed_cc1101`, which selects
 | SDK blob hash after the build | unchanged |
 | Upstream's suite `tests/run_t_embed_features.py` | 7 of its checks fail, **identically on an untouched checkout of the base commit and on this branch** (run side by side on Windows with Zig), so this branch adds no failures there. Examples: `run_radio_lifecycle_tests.py` looks for a function (`survey_restore_owned`) that is not in `wlan_hal.c`; `bw16_i2c_app/run.py` has stale hashes for four files; `plus_sd_recovery/hal_run.py` does not compile against its own stubs |
 | Other boards | 9 of the 10 other profiles compile, link and pass the image check; thormini fails to link on upstream breakage. Table in `REPORT.md`. None was run |
+| Web flasher | `tests/web/test_md5.mjs` passes; in Chrome the page loads the build list, matches all four files to the manifest by size, SHA-256 and MD5, and handles "no device" and phone widths. Never run against a T-Embed |
 | Anything on a physical T-Embed | not done |
 
 ## Things worth telling upstream

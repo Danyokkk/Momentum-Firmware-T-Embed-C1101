@@ -1,0 +1,206 @@
+name: Firmware and web flasher
+
+# main:        host tests -> T-Embed Plus build + image check -> provenance -> deploy the web flasher
+# tags v*:     the same build -> GitHub release with the files -> redeploy the web flasher from main
+# pull requests: host tests and the build only
+#
+# The web flasher is served by GitHub Pages. Pages must be switched to
+# "GitHub Actions" once in the repository settings (Settings > Pages > Source);
+# a workflow cannot do that with its own token.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firmware-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host-tests:
+    name: Host tests (gcc, ASan/UBSan)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Sub-GHz weather decoders
+        run: python3 tests/subghz_ws/run.py
+      - name: Sub-GHz region presets
+        run: python3 tests/subghz_region/run.py
+      - name: BLE Lab advertisement parser
+        run: python3 tests/ble_lab/run.py
+      - name: Web flasher MD5
+        run: node tests/web/test_md5.mjs
+
+  build:
+    name: Build T-Embed CC1101 Plus (lab profile)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    container: espressif/idf:v5.4.1
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Describe this build
+        id: meta
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          short="${GITHUB_SHA::7}"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            label="$GITHUB_REF_NAME"
+            firmware_label="lab.$GITHUB_REF_NAME"
+            if [[ "$label" == *-* ]]; then channel=prerelease; else channel=release; fi
+          elif [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            label="pr${{ github.event.number }}-$short"
+            firmware_label="lab.$short"
+            channel=dev
+          else
+            label="main-$short"
+            firmware_label="lab.$short"
+            channel=dev
+          fi
+          {
+            echo "label=$label"
+            echo "firmware_label=$firmware_label"
+            echo "channel=$channel"
+            echo "date=$(git log -1 --format=%cI)"
+          } >> "$GITHUB_OUTPUT"
+          echo "Build $label ($channel), firmware label $firmware_label"
+
+      - name: Build and check the image
+        env:
+          ESP_IDF_DIR: /opt/esp/idf
+          IDF_TOOLS_PATH: /opt/esp
+          FLIPPER_BUILD_LABEL: ${{ steps.meta.outputs.firmware_label }}
+        run: python3 tools/tembed_plus/build.py build
+
+      - name: Package for the release and the web flasher
+        run: >-
+          python3 tools/web/package_build.py
+          --build-dir build_t_embed_plus
+          --out dist/package
+          --label "${{ steps.meta.outputs.label }}"
+          --channel "${{ steps.meta.outputs.channel }}"
+          --ref "$GITHUB_REF_NAME"
+          --commit "$GITHUB_SHA"
+          --date "${{ steps.meta.outputs.date }}"
+          --repo "$GITHUB_REPOSITORY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: firmware-package
+          path: dist/package
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Keep the build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-logs
+          path: build_t_embed_plus/log
+          if-no-files-found: ignore
+
+  attest:
+    name: Attest build provenance
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: firmware-package
+          path: package
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            package/*.bin
+            package/sd_bundle.zip
+
+  release:
+    name: Publish the GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [host-tests, build, attest]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: firmware-package
+          path: package
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          owner="${GITHUB_REPOSITORY%%/*}"
+          name="${GITHUB_REPOSITORY#*/}"
+          site="https://${owner,,}.github.io/${name}/"
+          python3 tools/web/release_notes.py package/manifest.json --site-url "$site" > notes.md
+          flags=()
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" package/* \
+            --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" \
+            --notes-file notes.md --verify-tag "${flags[@]}"
+      - name: Redeploy the web flasher from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Pages deploys run from main only (the github-pages environment does
+        # not accept tags by default); that run picks up this new release.
+        run: gh workflow run firmware.yml --repo "$GITHUB_REPOSITORY" --ref main
+
+  pages:
+    name: Deploy the web flasher
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [host-tests, build, attest]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: firmware-package
+          path: packages/main
+      - name: Fetch the newest releases
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tools/web/fetch_releases.py --repo "$GITHUB_REPOSITORY" --out packages/releases --limit 3
+      - name: Build the site
+        run: >-
+          python3 tools/web/build_site.py
+          --out site
+          --package packages/main
+          --releases-dir packages/releases
+          --repo "$GITHUB_REPOSITORY"
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v5

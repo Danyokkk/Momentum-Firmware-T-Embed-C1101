@@ -1,10 +1,9 @@
 name: Build Flipper ESP32 Variants
 
+# Upstream workflow, kept for reference and runnable by hand. This fork's CI
+# is firmware.yml (T-Embed Plus build, tests, releases, web flasher) and
+# boards.yml (other board profiles).
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
   workflow_dispatch:
 
 jobs:

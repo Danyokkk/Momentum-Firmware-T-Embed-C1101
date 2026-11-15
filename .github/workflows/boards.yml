@@ -1,0 +1,66 @@
+name: Other board profiles
+
+# Compile-and-link check of every other board profile the repository carries,
+# in the lab profile. None of these boards is tested on hardware here.
+# thormini is expected to fail: two functions are missing from its
+# board-specific files upstream. It is built anyway so a fix is noticed.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["docs/**", "web/**", "**/*.md"]
+  pull_request:
+    paths-ignore: ["docs/**", "web/**", "**/*.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: boards-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.board }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    container: espressif/idf:v5.4.1
+    continue-on-error: ${{ matrix.known_broken }}
+    strategy:
+      fail-fast: false
+      matrix:
+        board:
+          - esp32s3_generic
+          - fatalcore
+          - waveshare_c6_1.9
+          - waveshare_c6_1.47
+          - paradoxt
+          - thorchimera
+          - m5stick_s3
+          - m5stack_cardputer_adv
+          - DIY
+        known_broken: [false]
+        include:
+          - board: thormini
+            known_broken: true
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build
+        env:
+          ESP_IDF_DIR: /opt/esp/idf
+          IDF_TOOLS_PATH: /opt/esp
+        run: python3 tools/tembed_plus/cross_build.py --boards "${{ matrix.board }}" --results results.json
+      - name: Result
+        if: always()
+        run: cat results.json 2>/dev/null || echo "no result file"
+      - name: Keep the build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-log-${{ matrix.board }}
+          path: build_x_${{ matrix.board }}.log
+          if-no-files-found: ignore

@@ -4,6 +4,8 @@
 #include <toolbox/fw_version.h>
 #include <view_dispatcher.h>
 #include <widget.h>
+#include <esp_app_desc.h>
+#include <stdio.h>
 
 typedef struct {
     Gui* gui;
@@ -45,7 +47,11 @@ int32_t about_app(void* p) {
         AlignCenter,
         AlignTop,
         FontSecondary,
+#ifdef FURI_PROFILE_LAB
+        FURI_ESP32_PROJECT_AUTHOR ", lab profile");
+#else
         FURI_ESP32_PROJECT_AUTHOR);
+#endif
 
     widget_add_string_multiline_element(
         app->widget,
@@ -56,14 +62,18 @@ int32_t about_app(void* p) {
         FontSecondary,
         furi_hal_board_get_name());
 
+    /* The image header's version carries the CI build label as well, for
+     * example "2.0.0+lab.1a2b3c4": the same name the web flasher lists. The
+     * widget copies the text, so a stack buffer is fine. */
+    const esp_app_desc_t* app_desc = esp_app_get_description();
+    char version_line[48];
+    snprintf(
+        version_line,
+        sizeof(version_line),
+        "FW: %s",
+        (app_desc && app_desc->version[0]) ? app_desc->version : FURI_ESP32_VERSION);
     widget_add_string_multiline_element(
-        app->widget,
-        64,
-        49,
-        AlignCenter,
-        AlignTop,
-        FontSecondary,
-        "FW: " FURI_ESP32_VERSION);
+        app->widget, 64, 49, AlignCenter, AlignTop, FontSecondary, version_line);
 
     View* widget_view = widget_get_view(app->widget);
     view_set_previous_callback(widget_view, about_app_exit);

@@ -1,6 +1,6 @@
 # Report: T-Embed CC1101 Plus lab-profile firmware
 
-Status on 2026-11-14, branch `tembed-plus/lab-profile` (base: Sor3nt
+Status on 2026-11-15, branch `tembed-plus/lab-profile` (base: Sor3nt
 `ef4d8f3b`). Detail lives in the other documents in this folder; this is the
 summary.
 
@@ -24,7 +24,8 @@ summary.
 | NFC | read-only app: identify, read, parse, save. 39 write/emulate/clone/unlock/key-attack scenes replaced by an explanation screen; card emulation refused in the PN532 driver |
 | Wi-Fi | WiFi Lab: passive scan, signal/channel list, join own network with confirmation, opt-in CSV export; scans are passive in the HAL |
 | Bluetooth | BLE Lab: passive scan with name, vendor, signal, location-tag hint, opt-in CSV export |
-| System | TLS verification on; OTA rollback; network updater that used unverified TLS removed |
+| System | TLS verification on; OTA rollback; network updater that used unverified TLS removed; firmware version carries the commit or tag |
+| Distribution | web flasher on GitHub Pages; CI with sanitizer host tests, image build and checks, packaging and build-provenance attestations; tagged releases |
 | Docs | feature matrix with evidence levels, Momentum parity matrix, board profile, provenance and licences, release guide |
 
 ## Build results
@@ -65,18 +66,37 @@ was fixed here. Upstream's own CI builds only four of the eleven profiles.
 | `tests/subghz_region/run.py` | 212 checks pass | region preset table and lookup; default-deny |
 | `tests/ble_lab/run.py` | 29 checks pass (one of them a 20 000-case fuzz loop) | BLE advertisement parser, including malformed input |
 | `check_lab_exclusions.py` | passes | 4 excluded apps, 54 excluded source globs, 18 symbol rules on the linked image |
+| `tests/web/test_md5.mjs` | passes (Node) | the web flasher's MD5 against the RFC 1321 vectors and Node's crypto, from 0 bytes to 16 MB |
 | upstream `tests/run_t_embed_features.py` | 7 of its checks fail, identically on the untouched base commit | not changed by this fork |
 
-All host tests were run on Windows with Zig, which means without
-ASan/UBSan. The CI workflow that would run them with sanitizers on Linux has
-not been executed.
+Locally the host tests were run on Windows with Zig, which means without
+ASan/UBSan. In CI (`firmware.yml`) they run on Linux with gcc and
+`-fsanitize=address,undefined` on every push and pull request.
+
+## Distribution
+
+| What | Where |
+| --- | --- |
+| Web flasher | <https://danyokkk.github.io/Momentum-Firmware-T-Embed-C1101/> (Chrome, Edge or Opera on a computer) |
+| Releases | the repository's GitHub releases, one per `v*` tag |
+| CI | `.github/workflows/firmware.yml`: tests, build, package, attest, deploy, release. `boards.yml`: the other boards |
+
+The site and the releases carry only files built by this repository's
+Actions, each with a build-provenance attestation. The flasher refuses any chip
+other than an ESP32-S3 with 16 MB flash, checks every file's size, SHA-256 and
+MD5 against the build manifest before writing, backs the whole flash up by
+default (each 256 KB chunk checked against the device's MD5), has the device
+verify every written region, and writes the OTA boot selection so the new
+image is the one that starts. It has been tested in Chrome without a device;
+its install, backup and restore steps have not been run against a T-Embed.
 
 ## Hardware verification
 
-None. To do, in order: back up the device, flash, then work through section 5
-of `RELEASE_GUIDE.md` (boot, display, encoder, SD, Sub-GHz receive, region
-gate, NFC read, IR, nRF24 detection, Wi-Fi and BLE scans, USB modes, update
-and rollback).
+None. To do, in order: back up the device and flash it with the web flasher
+(which tests the flasher too), then work through section 5 of
+`RELEASE_GUIDE.md` (boot, display, encoder, SD, Sub-GHz receive, region gate,
+NFC read, IR, nRF24 detection, Wi-Fi and BLE scans, USB modes, update and
+rollback), then restore the backup once to prove the way back.
 
 ## Withheld categories
 

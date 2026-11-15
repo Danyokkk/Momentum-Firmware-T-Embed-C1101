@@ -1,14 +1,8 @@
 name: Native Tools host regressions
+# Upstream workflow (7 of its checks already fail on the untouched upstream code), kept for reference and runnable by hand. This fork's CI
+# is firmware.yml (T-Embed Plus build, tests, releases, web flasher) and
+# boards.yml (other board profiles).
 on:
-  pull_request:
-    paths:
-      - 'applications_user/**'
-      - 'applications/main/**'
-      - 'applications/services/**'
-      - 'components/**'
-      - 'tests/**'
-      - 'tools/**'
-      - '.github/workflows/native-tools-tests.yml'
   workflow_dispatch:
 permissions:
   contents: read

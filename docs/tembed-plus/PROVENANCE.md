@@ -119,6 +119,21 @@ Bluetooth Core Specification Supplement's AD-structure format, not copied.
 `applications/main/wifi_lab/` is new code that calls the port's existing
 `wlan_hal` and `wifi` service APIs.
 
+### 5. Web flasher and CI
+
+| | |
+| --- | --- |
+| New code | `web/` (page, styles, flasher logic, MD5), `tools/web/` (packaging, site builder, release fetcher, release notes), `tests/web/`, `.github/workflows/firmware.yml` and `boards.yml` |
+| Model | Sor3nt's browser flasher (https://sor3nt.github.io/interface.html) for the flow: choose a build, connect, install. The code here was written for this fork |
+| esptool-js | 0.7.0, Apache-2.0, from the npm registry. Not committed: `build_site.py` downloads the tarball when it builds the site and refuses it unless it matches the sha512 integrity pinned in `web/vendor.json`. The site serves `bundle.js` next to its `LICENSE` |
+| MD5 | written from RFC 1321 (Web Crypto has no MD5, and the ROM loader checks writes with it). The 64 round constants were computed from the RFC's sine formula; `tests/web/test_md5.mjs` checks the code against the RFC's test vectors and Node's crypto |
+| CI dependencies | only GitHub's own `actions/*` actions, by major-version tag, and the `espressif/idf:v5.4.1` container image for firmware builds |
+
+To update esptool-js: change the version, tarball and integrity in
+`web/vendor.json` (the integrity is the `dist.integrity` field of
+`https://registry.npmjs.org/esptool-js/<version>`), read its changelog for API
+changes, and test a flash on a device before releasing.
+
 ## Not imported (candidates)
 
 Present upstream, absent here, not yet ported:

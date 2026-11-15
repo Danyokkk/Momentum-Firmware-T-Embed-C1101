@@ -47,6 +47,18 @@ string(REGEX REPLACE ".*\"([^\"]+)\".*" "\\1" PROJECT_VER "${_furi_ver_line}")
 if(NOT PROJECT_VER)
     message(FATAL_ERROR "FURI_ESP32_VERSION not found in components/toolbox/fw_version.h")
 endif()
+# Build label from CI (-DFLIPPER_BUILD_LABEL=lab.1a2b3c4 or lab.v0.1.0; empty for
+# local builds), appended as semver build metadata. The image header, the web
+# flasher's build list and the About screen then all name the same build.
+# esp_app_desc_t.version holds 31 characters.
+if(DEFINED FLIPPER_BUILD_LABEL AND NOT "${FLIPPER_BUILD_LABEL}" STREQUAL "")
+    string(REGEX REPLACE "[^A-Za-z0-9.-]" "-" _flipper_label "${FLIPPER_BUILD_LABEL}")
+    set(PROJECT_VER "${PROJECT_VER}+${_flipper_label}")
+    string(LENGTH "${PROJECT_VER}" _flipper_version_length)
+    if(_flipper_version_length GREATER 31)
+        string(SUBSTRING "${PROJECT_VER}" 0 31 PROJECT_VER)
+    endif()
+endif()
 message(STATUS "Firmware version (PROJECT_VER): ${PROJECT_VER}")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)

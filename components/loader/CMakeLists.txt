@@ -7,4 +7,5 @@ idf_component_register(
         "apps/about_app.c"
     INCLUDE_DIRS "."
     REQUIRES furi gui toolbox assets storage archive dialogs flipper_application
+    PRIV_REQUIRES esp_app_format
 )

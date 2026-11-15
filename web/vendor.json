@@ -1,0 +1,14 @@
+{
+  "_comment": "Third-party files fetched by tools/web/build_site.py and checked against the pinned integrity before they enter the site. Change the version only together with the integrity, after reading that release's notes.",
+  "esptool-js": {
+    "version": "0.7.0",
+    "license": "Apache-2.0",
+    "homepage": "https://github.com/espressif/esptool-js",
+    "tarball": "https://registry.npmjs.org/esptool-js/-/esptool-js-0.7.0.tgz",
+    "integrity": "sha512-9wHuW/s9t4Vs6HKcr3pra3gbRVWwaN0eabMWodWH4KEJHEYZxgmWwZ3s0F4xcWVCZOc/L98bGZ4uWoZvR8KBKA==",
+    "files": {
+      "package/bundle.js": "vendor/esptool-js/bundle.js",
+      "package/LICENSE": "vendor/esptool-js/LICENSE"
+    }
+  }
+}

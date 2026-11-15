@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>T-Embed CC1101 Plus Web Flasher</title>
+  <meta name="description" content="Install the unofficial, passive-by-default Flipper-style lab firmware on a LilyGO T-Embed CC1101 Plus from Chrome or Edge.">
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#flasher">Skip to the flasher</a>
+
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="./" aria-label="T-Embed Lab Firmware, home">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="3" y="7" width="26" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2.2"/>
+          <circle cx="22" cy="16" r="4.2" fill="none" stroke="currentColor" stroke-width="2.2"/>
+          <path d="M8 13h6M8 19h4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+        <span>T-Embed Lab Firmware</span>
+      </a>
+      <nav class="site-nav" aria-label="Sections">
+        <a href="#after">After installing</a>
+        <a href="#about">What's inside</a>
+        <a href="#help">Help</a>
+        <a href="{{REPO_URL}}">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <p class="eyebrow">LilyGO T-Embed CC1101 Plus &middot; ESP32-S3</p>
+      <h1>Install the lab firmware from your browser</h1>
+      <p class="lead">An unofficial, Momentum-inspired Flipper-style firmware for the T-Embed CC1101 Plus, built from public source with a passive-by-default lab profile. Plug the device in, pick a build, press Install.</p>
+      <div class="callout warn" role="note">
+        <strong>Experimental.</strong> This firmware has not been tested on a physical T-Embed yet. Leave the backup option ticked the first time, and skim <a href="#help">the recovery notes</a> before you start. Nothing here can damage the chip: its download mode is in ROM, so you can always flash again.
+      </div>
+    </section>
+
+    <section id="flasher" class="wrap" aria-labelledby="flasher-title">
+      <h2 id="flasher-title" class="visually-hidden">Flasher</h2>
+
+      <div id="unsupported" class="callout error" hidden>
+        <strong>This browser cannot talk to USB serial devices.</strong>
+        Open this page in Chrome, Edge or Opera on a computer (Windows, macOS, Linux or ChromeOS). Firefox, Safari and phone browsers do not support Web Serial.
+      </div>
+
+      <div class="card">
+        <ol class="steps">
+          <li class="step" id="step-build">
+            <div class="step-head"><span class="step-num" aria-hidden="true">1</span><h3>Choose a build</h3></div>
+            <div id="build-list" class="build-list" role="radiogroup" aria-label="Firmware build">
+              <p class="muted">Loading the list of builds&hellip;</p>
+            </div>
+            <div id="build-details" class="build-details"></div>
+          </li>
+
+          <li class="step" id="step-connect">
+            <div class="step-head"><span class="step-num" aria-hidden="true">2</span><h3>Connect the T-Embed</h3></div>
+            <p>Plug it into this computer with a USB-C <em>data</em> cable, press <strong>Connect</strong> and choose the entry that appears, usually <span class="nowrap">&ldquo;USB JTAG/serial debug unit&rdquo;</span>.</p>
+            <div class="row">
+              <button id="connect-btn" class="btn primary" type="button">Connect</button>
+              <button id="disconnect-btn" class="btn ghost" type="button" hidden>Disconnect</button>
+              <span id="device-info" class="device-info" aria-live="polite"></span>
+            </div>
+            <details class="inline-help" id="connect-help">
+              <summary>The device is not listed, or connecting fails</summary>
+              <ol>
+                <li><strong>Download mode:</strong> press and hold the encoder (it is the BOOT key), click the RST button on the back, then release the encoder. Press Connect again.</li>
+                <li><strong>Cable:</strong> many USB-C cables only charge. Try another one, plugged straight into the computer.</li>
+                <li><strong>Port in use:</strong> close Arduino IDE, PlatformIO, qFlipper, serial monitors and other flasher tabs.</li>
+                <li><strong>Linux:</strong> add your user to the <code>dialout</code> group (on some distributions <code>uucp</code>), then log out and in again.</li>
+              </ol>
+            </details>
+          </li>
+
+          <li class="step" id="step-install">
+            <div class="step-head"><span class="step-num" aria-hidden="true">3</span><h3>Install</h3></div>
+            <label class="check">
+              <input type="checkbox" id="opt-backup" checked>
+              <span><strong>Back up the device first.</strong> Saves its whole 16&nbsp;MB flash to a file in your downloads so you can go back. Takes a few minutes.</span>
+            </label>
+            <label class="check">
+              <input type="checkbox" id="opt-erase">
+              <span><strong>Erase everything first.</strong> A factory reset: also clears settings, PIN, Bluetooth pairings and the TX region.</span>
+            </label>
+            <div class="row">
+              <button id="install-btn" class="btn primary large" type="button" disabled>Install</button>
+              <span id="install-hint" class="muted"></span>
+            </div>
+          </li>
+        </ol>
+
+        <div id="progress" class="progress-panel" hidden>
+          <ol id="phases" class="phases"></ol>
+          <progress id="progress-bar" max="1" value="0"></progress>
+          <p id="progress-detail" class="muted" aria-live="polite"></p>
+          <p class="callout warn compact">Keep the cable connected and this tab open until it says it has finished.</p>
+        </div>
+
+        <div id="result" class="result" hidden></div>
+
+        <details class="log-panel">
+          <summary>Technical log</summary>
+          <pre id="log" tabindex="0"></pre>
+          <button id="log-copy" class="btn ghost small" type="button">Copy log</button>
+        </details>
+      </div>
+    </section>
+
+    <section id="after" class="wrap section">
+      <h2>After installing</h2>
+      <div class="tiles">
+        <article class="tile">
+          <h3>Set up the SD card</h3>
+          <p>Format a microSD card as FAT32 (LilyGO recommends SanDisk, 32&nbsp;GB or smaller), extract the bundle to its root and insert it. The bundle holds IR libraries, NFC and Sub-GHz data and animations.</p>
+          <p><a id="sd-link" class="btn" href="{{REPO_URL}}/releases">Download the SD bundle</a> <span id="sd-size" class="muted nowrap"></span></p>
+        </article>
+        <article class="tile">
+          <h3>Choose your TX region</h3>
+          <p>Sub-GHz transmit stays off until you pick a region in <strong>Sub-GHz &rarr; Radio Settings &rarr; TX Region</strong>. Receiving works without it. The presets limit frequency, not power or duty cycle.</p>
+        </article>
+        <article class="tile">
+          <h3>Run the first-boot checks</h3>
+          <p>Thirteen quick checks of the screen, encoder, SD card and radios are in the <a href="{{REPO_URL}}/blob/main/docs/tembed-plus/RELEASE_GUIDE.md#5-first-boot-checklist">release guide</a>. Reports of what works are the most useful contribution right now.</p>
+        </article>
+        <article class="tile">
+          <h3>Report a problem</h3>
+          <p>Open an issue with the build name and the technical log from this page: <a href="{{REPO_URL}}/issues">{{REPO}}/issues</a>.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="about" class="wrap section">
+      <h2>What this firmware is</h2>
+      <p>It builds on <a href="https://github.com/Sor3nt/Flipper-Zero-ESP32-Port">Sor3nt&rsquo;s Flipper Zero ESP32 port</a>, uses <a href="https://github.com/Next-Flip/Momentum-Firmware">Momentum</a> as its feature reference and is compiled with a <strong>lab profile</strong>: tools for your own equipment stay in, tools built to attack other people&rsquo;s equipment are left out.</p>
+      <div class="two-col">
+        <div>
+          <h3>Included</h3>
+          <ul class="list-yes">
+            <li>Sub-GHz: read, decode and save (58 remote and sensor protocols plus 25 weather stations), RAW capture, frequency analyzer, spectrum; transmit of fixed-code and RAW signals inside your chosen region</li>
+            <li>NFC (13.56&nbsp;MHz): read, identify, parse and save tags</li>
+            <li>Infrared: learn, save and universal remotes</li>
+            <li>nRF24: module check and a receive-only 2.4&nbsp;GHz activity view</li>
+            <li>WiFi Lab: passive network scan, join your own network</li>
+            <li>BLE Lab: passive Bluetooth LE scan</li>
+            <li>U2F security key, file archive, JavaScript apps, menu styles, asset packs</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Left out on purpose</h3>
+          <ul class="list-no">
+            <li>Wi-Fi deauthentication, evil portal, handshake capture, WPS attacks, beacon spam</li>
+            <li>Sub-GHz jamming, brute force, and generating or sending rolling codes (those decode only)</li>
+            <li>NFC key attacks, cloning, emulation and writing</li>
+            <li>nRF24 jamming and MouseJack, BLE spam, BadUSB</li>
+          </ul>
+          <h3>Not possible on this hardware</h3>
+          <ul class="list-na">
+            <li>125&nbsp;kHz RFID and iButton (no reader for them on the board), 5&nbsp;GHz Wi-Fi</li>
+          </ul>
+        </div>
+      </div>
+      <p>Evidence for each feature and what is still missing: <a href="{{REPO_URL}}/blob/main/docs/tembed-plus/FEATURE_MATRIX.md">feature matrix</a> &middot; <a href="{{REPO_URL}}/blob/main/docs/tembed-plus/MOMENTUM_PARITY.md">Momentum parity</a> &middot; <a href="{{REPO_URL}}/blob/main/docs/tembed-plus/REPORT.md">project report</a>.</p>
+
+      <h3>How these builds are made</h3>
+      <p>Every file offered here is built by GitHub Actions from the commit shown next to it, with a pinned ESP-IDF v5.4.1 toolchain, and the build fails if any left-out feature is linked into the image. Before writing, this page checks each file&rsquo;s SHA-256 against the build manifest; after writing, it compares the device&rsquo;s own MD5 of every region with the file. Each file also carries a GitHub build-provenance attestation you can check with <code>gh attestation verify furi_esp32.bin --repo {{REPO}}</code>.</p>
+    </section>
+
+    <section id="tools" class="wrap section">
+      <h2>Advanced</h2>
+      <p class="muted">These need a connected device (step 2).</p>
+      <details class="panel">
+        <summary>Restore a backup</summary>
+        <p>Writes a full 16&nbsp;MB backup back to the device: one saved by this page, or made with <code>esptool read_flash 0 0x1000000</code>.</p>
+        <div class="row">
+          <input type="file" id="restore-file" accept=".bin,application/octet-stream">
+          <button id="restore-btn" class="btn" type="button" disabled>Restore</button>
+        </div>
+      </details>
+      <details class="panel">
+        <summary>Back up only</summary>
+        <p>Reads the whole flash into a file without changing anything. The device stays in download mode afterwards; press RST on the back to restart it.</p>
+        <button id="backup-btn" class="btn" type="button" disabled>Save a backup</button>
+      </details>
+      <details class="panel">
+        <summary>Erase the flash</summary>
+        <p>Leaves the device with no firmware until you install or restore one. Usually not needed: &ldquo;Erase everything first&rdquo; in step 3 does the same as part of an install.</p>
+        <button id="erase-btn" class="btn danger" type="button" disabled>Erase the flash</button>
+      </details>
+      <details class="panel">
+        <summary>Download the files or flash with esptool</summary>
+        <div id="downloads"><p class="muted">Choose a build first.</p></div>
+        <p>With <a href="https://github.com/espressif/esptool">esptool</a> installed, from the folder with the four files:</p>
+        <pre class="cmd" id="esptool-cmd">python -m esptool --chip esp32s3 write_flash 0x0 bootloader.bin 0x8000 partition-table.bin 0x10000 furi_esp32.bin 0xbf0000 ota_data_initial.bin</pre>
+        <button id="cmd-copy" class="btn ghost small" type="button">Copy command</button>
+      </details>
+    </section>
+
+    <section id="help" class="wrap section">
+      <h2>Requirements and recovery</h2>
+      <dl class="faq">
+        <dt>Which browsers work?</dt>
+        <dd>Chrome, Edge or Opera on Windows, macOS, Linux or ChromeOS. They support Web Serial; Firefox, Safari and phone browsers do not.</dd>
+        <dt>Do I need a driver?</dt>
+        <dd>No. The ESP32-S3&rsquo;s built-in USB uses the standard drivers on Windows 10 and 11, macOS and Linux.</dd>
+        <dt>It stopped half-way, or the device no longer starts.</dt>
+        <dd>That is recoverable. Put the device in download mode (hold the encoder, click RST on the back, release the encoder), connect again and press Install, or restore your backup under Advanced.</dd>
+        <dt>It starts, but the screen stays dark or it keeps restarting.</dt>
+        <dd>Restore your backup, and please open an issue with the build name and the technical log. These builds have not been run on a device yet, so reports like this are exactly what is needed.</dd>
+        <dt>Does it work on the original T-Embed CC1101?</dt>
+        <dd>It is made for the Plus. The original model uses the same board definition, so it should run there too (the nRF24 tool will report no module), but neither has been tried yet.</dd>
+        <dt>Am I allowed to use the radios?</dt>
+        <dd>Use the device on equipment you own or are allowed to test, and follow the radio rules where you are. The TX region presets restrict frequency only.</dd>
+      </dl>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>Unofficial project. Not affiliated with or endorsed by Next-Flip (Momentum), Flipper Devices, LilyGO or Sor3nt. Source: <a href="{{REPO_URL}}">{{REPO}}</a>; the Flipper-derived code is GPL-3.0.</p>
+      <p>Flashing uses <a href="https://github.com/espressif/esptool-js">esptool-js</a> {{ESPTOOL_VERSION}} by Espressif (Apache-2.0, <a href="vendor/esptool-js/LICENSE">licence</a>), served from this site. This page has no analytics and sets no cookies; files you back up never leave your computer.</p>
+    </div>
+  </footer>
+
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+    <form method="dialog">
+      <h2 id="confirm-title"></h2>
+      <div id="confirm-body"></div>
+      <div class="row end">
+        <button value="cancel" class="btn ghost" type="submit">Cancel</button>
+        <button value="ok" id="confirm-ok" class="btn primary" type="submit">Continue</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

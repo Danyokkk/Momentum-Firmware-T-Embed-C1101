@@ -156,6 +156,9 @@ def idf_py(idf: Path, env: dict[str, str], *args: str) -> int:
         f"-DFLIPPER_PROFILE={PROFILE}",
         f"-DSDKCONFIG={BUILD_DIR}/sdkconfig",
         f"-DSDKCONFIG_DEFAULTS={defaults}",
+        # CI sets FLIPPER_BUILD_LABEL (see .github/workflows/firmware.yml). Passed
+        # even when empty so a label cached by an earlier build is cleared.
+        f"-DFLIPPER_BUILD_LABEL={os.environ.get('FLIPPER_BUILD_LABEL', '')}",
         *args,
     ]
     note("idf.py " + " ".join(args))
