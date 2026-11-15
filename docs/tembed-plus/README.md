@@ -84,6 +84,7 @@ The board is chosen with `-DFLIPPER_BOARD=lilygo_t_embed_cc1101`, which selects
 | SDK blob hash after the build | unchanged |
 | Upstream's suite `tests/run_t_embed_features.py` | 7 of its checks fail, **identically on an untouched checkout of the base commit and on this branch** (run side by side on Windows with Zig), so this branch adds no failures there. Examples: `run_radio_lifecycle_tests.py` looks for a function (`survey_restore_owned`) that is not in `wlan_hal.c`; `bw16_i2c_app/run.py` has stale hashes for four files; `plus_sd_recovery/hal_run.py` does not compile against its own stubs |
 | Other boards | 9 of the 10 other profiles compile, link and pass the image check; thormini fails to link on upstream breakage. Table in `REPORT.md`. None was run |
+| GitHub Actions, Linux (first runs 2026-11-15) | host tests pass with gcc ASan/UBSan; the T-Embed Plus build passes in the `espressif/idf:v5.4.1` container with the SDK, lock and image checks; the same 9 other boards build there and thormini fails the same way; packaging and attestation work |
 | Web flasher | `tests/web/test_md5.mjs` passes; in Chrome the page loads the build list, matches all four files to the manifest by size, SHA-256 and MD5, and handles "no device" and phone widths. Never run against a T-Embed |
 | Anything on a physical T-Embed | not done |
 

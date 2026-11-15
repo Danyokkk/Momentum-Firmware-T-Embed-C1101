@@ -50,7 +50,7 @@ ships it and it still compiles", not "it works".
 | Reproducible build + toolchain lock | new | host | `tools/tembed_plus/build.py` built this image on Windows 11 | build on a second machine, compare `furi_esp32.bin` hash |
 | Firmware version names the build | new | build | CI sets `FLIPPER_BUILD_LABEL`, giving versions such as `2.0.0+lab.v0.1.0` or `2.0.0+lab.1a2b3c4` in the image header; `package_build.py` reads it back; the About screen shows it | About shows the version the web flasher listed |
 | Web flasher (install, backup, restore, erase in the browser) | new | host test | `web/`, built into a site by `tools/web/build_site.py`. Its MD5 code passes `tests/web/test_md5.mjs`; in Chrome, without a device, the page loaded the build list and matched all four files to the manifest | install from the site with backup on; restore that backup; read back and compare |
-| CI: sanitizer host tests, build, packaging, attestation, site deploy, releases | new | — | `.github/workflows/firmware.yml` and `boards.yml`; results are on the repository's Actions tab | — |
+| CI: sanitizer host tests, build, packaging, attestation, site deploy, releases | new | build | `.github/workflows/firmware.yml` and `boards.yml`. First runs (2026-11-15): sanitizer host tests, the T-Embed build and its checks, 9 of 10 other boards, packaging and attestation passed. The release job runs only for a tag and has not run yet | — |
 
 ## Sub-GHz (CC1101)
 

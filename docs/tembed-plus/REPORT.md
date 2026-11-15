@@ -32,10 +32,13 @@ summary.
 
 T-Embed CC1101 Plus (`tools/tembed_plus/build.py build`, ESP-IDF v5.4.1,
 Windows 11): see the table. Image check: no excluded app, source or symbol;
-`esp_wifi_80211_tx` and `esp_now_init` are not linked.
+`esp_wifi_80211_tx` and `esp_now_init` are not linked. GitHub Actions builds
+the same image on Linux in the `espressif/idf:v5.4.1` container with the same
+checks, and has passed since its first run (2026-11-15).
 
 All board profiles the repository carries, lab profile, compile-and-link only
-(`tools/tembed_plus/cross_build.py`). None of these boards was run.
+(`tools/tembed_plus/cross_build.py`). None of these boards was run. CI
+(`boards.yml`) gives the same result on Linux.
 
 | Board profile | IDF target | Result | Image size | Image check | Note |
 | --- | --- | --- | --- | --- | --- |
@@ -71,7 +74,8 @@ was fixed here. Upstream's own CI builds only four of the eleven profiles.
 
 Locally the host tests were run on Windows with Zig, which means without
 ASan/UBSan. In CI (`firmware.yml`) they run on Linux with gcc and
-`-fsanitize=address,undefined` on every push and pull request.
+`-fsanitize=address,undefined` on every push and pull request, and passed
+there from the first run (2026-11-15).
 
 ## Distribution
 
