@@ -119,7 +119,32 @@ Bluetooth Core Specification Supplement's AD-structure format, not copied.
 `applications/main/wifi_lab/` is new code that calls the port's existing
 `wlan_hal` and `wifi` service APIs.
 
-### 5. Web flasher and CI
+### 5. POCSAG and additional Sub-GHz protocols (Momentum → this fork)
+
+| | |
+| --- | --- |
+| Source | Momentum `d3f89df`, `lib/subghz/protocols/`: `pocsag.{c,h}`, `pcsg_generic.{c,h}`, `x10.{c,h}`, `allstar_firefly.{c,h}`, `nord_ice.{c,h}` |
+| Destination | `lib/subghz/protocols/` in this repository |
+| Modifications | byte-identical apart from one line in `pocsag.c`: its `#include <furi/core/string.h>` became `<furi/core/furi_string.h>`, this port's header name. Registered in `protocol_items.{c,h}` |
+| Why from Momentum | these are present in Momentum's tree but commented out of its registry; this fork registers them |
+
+POCSAG is a receive-only pager decoder: its protocol definition carries no
+`SubGhzProtocolFlag_Send` and a null encoder, so it decodes but never transmits.
+X10 and Nord Ice are static-code remotes, transmittable only inside a chosen
+region like the other static protocols. AllStar Firefly is rolling-code
+(`SubGhzProtocolTypeDynamic`), so the lab transmitter gate in
+`lib/subghz/transmitter.c` refuses to build an encoder for it: decode only.
+
+Tests: `tests/subghz_pocsag/run.py` (host). `pocsag_encode.py` is an
+independent POCSAG framer written from the ITU-R M.584 structure, not from the
+decoder source; the C harness replays its edge streams through the real decoder
+and checks the recovered address and message (1200 and 512 bps, numeric and
+alphanumeric, single- and multi-batch). The decoder performs no BCH error
+correction and the fixtures are synthetic, so this is self-consistency against
+an independent encoder, not proof against a real pager; nothing was received
+over the air. X10, AllStar Firefly and Nord Ice are build-verified only.
+
+### 6. Web flasher and CI
 
 | | |
 | --- | --- |
@@ -140,9 +165,6 @@ Present upstream, absent here, not yet ported:
 
 | Protocol(s) | In | Notes |
 | --- | --- | --- |
-| `pocsag`, `pcsg_generic` | Momentum | receive-only pager decoder; needs the FM preset path checked on the CC1101 |
-| `x10` | Momentum | 310 MHz home automation |
-| `allstar_firefly`, `nord_ice` | Momentum and Unleashed | static-code remotes |
 | `hormann_bisecur` | Momentum | 868 MHz FSK rolling code: decode-only candidate |
 | `doorbell32`, `keyfinder2`, `freezer` | Unleashed only | simple static protocols; upstream fixtures exist for `freezer` |
 | `belkorn`, `faac_tm`, `prastel`, `proteco`, `telcoma_edge` | Unleashed only | gate/door remotes with encoders. Port as decode-only, or not at all, after deciding the transmit policy in `FEATURE_MATRIX.md` |

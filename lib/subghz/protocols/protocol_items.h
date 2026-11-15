@@ -90,4 +90,11 @@
 #include "tpms_pmv107j.h"
 #include "holtek_ht6p20b.h"
 #include "agilize_key_pro.h"
+/* Ported from Momentum (lib/subghz/protocols); see docs/tembed-plus/PROVENANCE.md.
+ * POCSAG is receive-only (no Send flag, null encoder). AllStar Firefly is
+ * rolling-code (Dynamic), so the lab transmitter gate makes it decode-only. */
+#include "pocsag.h"
+#include "x10.h"
+#include "allstar_firefly.h"
+#include "nord_ice.h"
 

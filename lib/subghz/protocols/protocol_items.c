@@ -49,6 +49,13 @@ const SubGhzProtocol* const subghz_protocol_registry_items[] = {
     &tpms_protocol_renault,      &tpms_protocol_citroen,
     &tpms_protocol_pmv107j,         &subghz_protocol_holtek_ht6p20b,
     &subghz_protocol_agilize_key_pro,
+    /* Ported from Momentum (see docs/tembed-plus/PROVENANCE.md). POCSAG is a
+     * receive-only pager decoder; X10 and Nord Ice are static-code remotes
+     * (transmittable only inside a chosen region, like the other static
+     * protocols above); AllStar Firefly is rolling-code, so the transmitter
+     * gate in transmitter.c makes it decode-only. */
+    &subghz_protocol_pocsag,        &subghz_protocol_x10,
+    &subghz_protocol_allstar_firefly, &subghz_protocol_nord_ice,
 };
 
 const SubGhzProtocolRegistry subghz_protocol_registry = {
