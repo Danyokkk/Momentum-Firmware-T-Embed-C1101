@@ -29,7 +29,7 @@ def main() -> int:
     lines.append(f"Unofficial lab-profile firmware for the **{m['board_name']}** (ESP32-S3, 16 MB).\n")
     lines.append("## Install")
     if args.site_url:
-        lines.append(f"- In Chrome or Edge: **[web flasher]({args.site_url})**, choose `{m['id']}`.")
+        lines.append(f"- In Chrome, Edge or Opera on a computer: **[web flasher]({args.site_url})**, choose `{m['id']}`.")
     lines.append(
         "- With esptool: `python -m esptool --chip esp32s3 write_flash "
         + " ".join(f"{p['offset']:#x} {p['file']}" for p in m["parts"])

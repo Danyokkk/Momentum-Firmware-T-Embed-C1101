@@ -284,8 +284,9 @@ hand; `protopirate-tests.yml` is unchanged.
 **One-time setup:** in the repository, Settings &rarr; Pages &rarr; Build and
 deployment &rarr; Source: **GitHub Actions**. A workflow cannot switch Pages on
 with its own token, so until this is done the deploy step fails with a message
-saying Pages is not enabled. Then re-run the workflow (Actions &rarr; Firmware
-and web flasher &rarr; Run workflow).
+saying Pages is not enabled. Then open that failed run and choose **Re-run
+failed jobs** (only the deploy runs again, about a minute), or start a fresh
+run with Actions &rarr; Firmware and web flasher &rarr; Run workflow.
 
 **Making a release:**
 
