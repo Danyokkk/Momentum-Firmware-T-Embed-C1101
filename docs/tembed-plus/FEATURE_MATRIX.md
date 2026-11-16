@@ -188,5 +188,12 @@ The follow-up brief settled what the first pass had left open:
   screen; an external app with its own NFC code is outside the gates.
 - Host tests cover the new decoders, the region table and the BLE advert
   parser; the rest of the tree relies on upstream's own suites.
-- Battery life, RAM headroom, task stacks and SD throughput are unmeasured.
+- Battery life, run-time free heap, task stacks and SD throughput are unmeasured
+  (they need a device). Static RAM is measured from the linker map
+  (2026-11-16, after merging upstream `e6ec1197`): 199,303 of 341,760 bytes of
+  internal D/IRAM used, 142,457 free before the heap starts. The 37 decoders
+  this fork added put 4 bytes in static RAM (code and tables are in flash) and
+  about 3.4 KB plus allocator overhead on the heap while a Sub-GHz receiver
+  exists (upstream's own 63 decoders: 6.9 KB). The BLE Lab device table
+  (3.2 KB) sits in PSRAM on ESP32-S3 boards.
 - Remaining Momentum features are listed as "todo" in `MOMENTUM_PARITY.md`.

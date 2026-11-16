@@ -3,6 +3,7 @@
 #include <furi.h>
 #include <btshim.h>
 
+#include <esp_attr.h>
 #include <esp_bt.h>
 #include <esp_bt_main.h>
 #include <esp_gap_ble_api.h>
@@ -13,7 +14,10 @@
 
 #define TAG "BleLab"
 
-static BleLabDevice s_devices[BLE_LAB_MAX_DEVICES];
+/* Device table lives in PSRAM where the board has it (ESP32-S3 profiles set
+ * CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY); elsewhere the attribute is a
+ * no-op. It is only touched from task context under s_mutex, never an ISR. */
+static EXT_RAM_BSS_ATTR BleLabDevice s_devices[BLE_LAB_MAX_DEVICES];
 static uint16_t s_count = 0;
 static FuriMutex* s_mutex = NULL;
 static volatile bool s_scanning = false;
