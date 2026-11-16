@@ -176,6 +176,8 @@ Momentum firmware has no Wi-Fi; it relies on external ESP boards and apps
 | Passive network scan, channel/signal list, details | WiFi Lab | added | build |
 | Join own network, status (IP, gateway, RSSI) | WiFi Lab, with confirmation | added | build |
 | Scan export to SD | WiFi Lab, on request | added | build |
+| SD file server in a browser (upstream port feature, not in Momentum) | WiFi Lab, with confirmation | added | build |
+| SMB share browser and download (upstream port feature, not in Momentum) | WiFi Lab | added | build |
 | Marauder / GhostESP / Blackhat companions | not shipped | withheld | — |
 | Wardriver with third-party upload | not shipped | withheld | — |
 | Deauth, beacon spam, evil portal, handshake capture, WPS attacks, MITM | removed | withheld | image |

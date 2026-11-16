@@ -4,7 +4,17 @@ App(
     apptype=FlipperAppType.MENUEXTERNAL,
     entry_point="wifi_lab_app",
     requires=["gui", "storage", "wifi"],
-    stack_size=4 * 1024,
+    # The SD file server and the SMB client are upstream's engines. They live
+    # in the WiFi app's directory, which is not built in this fork, so the two
+    # files are compiled here. Both were read: an HTTP file manager and an SMB
+    # client, no frame injection or capture code
+    # (see tools/tembed_plus/check_lab_exclusions.py, ALLOWED_SHARED_SOURCES).
+    sources=[
+        "*.c*",
+        "../wlan_app/wlan_webfs.c",
+        "../wlan_app/wlan_smb.c",
+    ],
+    stack_size=8 * 1024,
     icon="A_Sub1ghz_14",
     order=67,
 )

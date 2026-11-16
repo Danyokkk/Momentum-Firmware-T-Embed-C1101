@@ -110,12 +110,14 @@ ships it and it still compiles", not "it works".
 | **WiFi Lab**: passive scan, signal/channel list, per-network detail | new | build | scan type is passive in the HAL: no probe requests | scan next to a monitor-mode sniffer: zero frames from the device MAC |
 | Join your own network (on-device confirmation), status page | new | build | password kept in RAM; saving to SD is a separate yes/no and is plain text | join, check IP; decline saving, reboot, password is gone |
 | Save scan list to SD (CSV) | new | build | only on request; `apps_data/wifi_lab/` | open the CSV on a PC |
+| **SD file server** (WiFi Lab): browser file manager for the SD card, over your own network or a WPA2 hotspot | new (upstream engine, new front end) | build | upstream's `wlan_webfs.c`. Asks before every start. The HTTP API has **no login**: over your own network anyone on that network can read and change the card (the prompt says so). Hotspot is always WPA2; upstream's published default password is replaced by a random one saved in `/ext/webfs/config.txt`. Hotspot mode pauses Wi-Fi and Bluetooth. Needs `/ext/webfs/index.html` from the SD bundle. Stops when the screen is left | start both modes, upload and download a file from a browser; confirm the server is gone after Stop |
+| **SMB browser** (WiFi Lab): browse a share, copy files or folders to the SD card | new (upstream engine, new front end) | build | upstream's `wlan_smb.c` on libsmb2 (SMB2/3). Server address is typed in, no network sweep. Read-only towards the server. Credentials stay in RAM. Copies land in `apps_data/wifi_lab/smb/<server>/` after a confirmation | browse a share on a PC or NAS as guest and with a password; copy one file and one folder |
 | Streaming app (internet radio etc.) | built | build | now subject to TLS verification | play one HTTP and one HTTPS stream |
 | Deauth (3 variants), SAE flood, beacon spam | excluded | image check | `esp_wifi_80211_tx` is not linked into the image at all | — |
 | Evil portal, captive DNS, credential capture, MITM, ARP block, code injection | excluded | image check | | — |
 | Handshake / PMKID capture, WPS PIN attacks | excluded | image check | | — |
 | Printer hijack, client-isolation probe | excluded | image check | | — |
-| Port scanner, SMB browser, Android TV remote, Web file server, packet sniffer | not built | — | benign or dual-use parts of the removed app; candidates to re-add individually with confirmation prompts | — |
+| Port scanner, Android TV remote, AirPrint receiver, packet sniffer | not built | — | benign or dual-use parts of the removed app; candidates to re-add individually with confirmation prompts | — |
 | 5 GHz Wi-Fi | unsupported | — | ESP32-S3 is 2.4 GHz only | — |
 
 ## Bluetooth LE
@@ -190,8 +192,9 @@ The follow-up brief settled what the first pass had left open:
   parser; the rest of the tree relies on upstream's own suites.
 - Battery life, run-time free heap, task stacks and SD throughput are unmeasured
   (they need a device). Static RAM is measured from the linker map
-  (2026-11-16, after merging upstream `e6ec1197`): 199,303 of 341,760 bytes of
-  internal D/IRAM used, 142,457 free before the heap starts. The 37 decoders
+  (2026-11-16, after merging upstream `e6ec1197`): 200,023 of 341,760 bytes of
+  internal D/IRAM used, 141,737 free before the heap starts (the SD file
+  server and SMB client added 720 bytes of that). The 37 decoders
   this fork added put 4 bytes in static RAM (code and tables are in flash) and
   about 3.4 KB plus allocator overhead on the heap while a Sub-GHz receiver
   exists (upstream's own 63 decoders: 6.9 KB). The BLE Lab device table

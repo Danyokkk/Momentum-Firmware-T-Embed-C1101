@@ -7,6 +7,9 @@
  *   - join a network you own, after an explicit on-device confirmation
  *   - connection status (IP, gateway, RSSI)
  *   - save the scan list to the SD card, only when asked
+ *   - SD file server: manage the card from a browser, over your own network
+ *     or a WPA2 hotspot, after an explicit confirmation
+ *   - SMB browser: copy files from a share on your network to the SD card
  *
  * What it deliberately does not do: inject frames, deauthenticate, capture
  * handshakes, spoof access points, or touch any client but this device.
@@ -28,6 +31,10 @@
 #include <wifi.h>
 #include <wlan_hal.h>
 #include <wlan_passwords.h>
+
+/* Engines from upstream's WiFi app, compiled into this one (application.fam). */
+#include <wlan_app/wlan_webfs.h>
+#include <wlan_app/wlan_smb.h>
 
 #define TAG "WifiLab"
 
@@ -63,6 +70,14 @@ typedef enum {
     WifiLabSceneSavePassword,
     WifiLabSceneMessage,
     WifiLabSceneStatus,
+    WifiLabSceneWebfsMenu,
+    WifiLabSceneWebfsConfirm,
+    WifiLabSceneWebfsRun,
+    WifiLabSceneSmbInput,
+    WifiLabSceneSmbConnect,
+    WifiLabSceneSmbBrowse,
+    WifiLabSceneSmbConfirm,
+    WifiLabSceneSmbDownload,
     WifiLabSceneCount,
 } WifiLabScene;
 
@@ -70,12 +85,16 @@ typedef enum {
     WifiLabEventScanDone = 0x1000,
     WifiLabEventJoinPressed,
     WifiLabEventPasswordEntered,
+    WifiLabEventTextDone,
+    WifiLabEventStop,
 } WifiLabEvent;
 
 enum {
     WifiLabStartScan,
     WifiLabStartStatus,
     WifiLabStartDisconnect,
+    WifiLabStartFileServer,
+    WifiLabStartSmb,
 };
 
 #define WIFI_LAB_LIST_SAVE 0xFFFFu
@@ -105,6 +124,26 @@ typedef struct {
     FuriString* message;
     bool started_wifi; /* this app brought the radio up */
     bool joined; /* a join succeeded: leave the radio to the WiFi service */
+
+    /* SD file server */
+    bool webfs_hotspot;
+    int webfs_clients;
+    char webfs_ssid[WLAN_WEBFS_SSID_MAX + 1];
+    char webfs_pw[WLAN_WEBFS_PW_MAX + 1];
+
+    /* SMB browser */
+    WlanSmb* smb; /* allocated on first use */
+    uint8_t smb_input;
+    bool smb_loading;
+    bool smb_download_done;
+    bool smb_dl_is_dir;
+    char smb_ip[16];
+    char smb_user[WLAN_SMB_USER_MAX];
+    char smb_pass[WLAN_SMB_PASS_MAX];
+    char smb_share[WLAN_SMB_SHARE_MAX];
+    char smb_path[WLAN_SMB_PATH_MAX];
+    char smb_dl_path[WLAN_SMB_PATH_MAX];
+    WlanSmbEntry smb_entry; /* scratch: too large for the app stack */
 } WifiLab;
 
 /* ------------------------------------------------------------- helpers --- */
@@ -270,6 +309,9 @@ static void wifi_lab_scene_start_on_enter(void* context) {
         submenu_add_item(
             app->submenu, "Disconnect", WifiLabStartDisconnect, wifi_lab_submenu_callback, app);
     }
+    submenu_add_item(
+        app->submenu, "SD file server", WifiLabStartFileServer, wifi_lab_submenu_callback, app);
+    submenu_add_item(app->submenu, "SMB browser", WifiLabStartSmb, wifi_lab_submenu_callback, app);
     view_dispatcher_switch_to_view(app->view_dispatcher, WifiLabViewSubmenu);
 }
 
@@ -286,6 +328,33 @@ static bool wifi_lab_scene_start_on_event(void* context, SceneManagerEvent event
     case WifiLabStartDisconnect:
         wlan_hal_disconnect();
         wifi_lab_show_message(app, "Disconnected.");
+        return true;
+    case WifiLabStartFileServer:
+        scene_manager_next_scene(app->scene_manager, WifiLabSceneWebfsMenu);
+        return true;
+    case WifiLabStartSmb:
+        if(!(wlan_hal_is_started() && wlan_hal_is_connected())) {
+            wifi_lab_show_message(app, "Join a network first\n(Scan, pick it, Join).");
+            return true;
+        }
+        if(!app->smb) app->smb = wlan_smb_alloc();
+        if(!app->smb) {
+            wifi_lab_show_message(app, "Not enough memory\nfor the SMB client.");
+            return true;
+        }
+        if(!app->smb_ip[0]) {
+            /* Start the address with this network's prefix. */
+            const uint32_t ip = wlan_hal_get_own_ip();
+            snprintf(
+                app->smb_ip,
+                sizeof(app->smb_ip),
+                "%u.%u.%u.",
+                (unsigned)(ip & 0xFF),
+                (unsigned)((ip >> 8) & 0xFF),
+                (unsigned)((ip >> 16) & 0xFF));
+        }
+        app->smb_input = 0;
+        scene_manager_next_scene(app->scene_manager, WifiLabSceneSmbInput);
         return true;
     default:
         return false;
@@ -678,6 +747,578 @@ static void wifi_lab_scene_status_on_exit(void* context) {
     widget_reset(app->widget);
 }
 
+/* ------------------------------------------------- file server (SD) --- */
+/*
+ * Upstream's Web-Filesystem engine (applications/main/wlan_app/wlan_webfs.c,
+ * compiled into this app, see application.fam): an HTTP file manager for the
+ * SD card. The HTTP API itself has no login, so this front end
+ *   - asks before every start and says who will be able to reach the card;
+ *   - never opens an unprotected hotspot: the hotspot is always WPA2, and
+ *     upstream's published default password is replaced by a random one;
+ *   - stops the server as soon as the screen is left.
+ */
+
+enum {
+    WifiLabWebfsOverWifi,
+    WifiLabWebfsHotspot,
+};
+
+static void wifi_lab_webfs_random_password(char* out, size_t length) {
+    /* No look-alike characters: the password is typed from this small screen. */
+    static const char alphabet[] = "abcdefghjkmnpqrstuvwxyz23456789";
+    for(size_t i = 0; i < length; i++) {
+        out[i] = alphabet[furi_hal_random_get() % (sizeof(alphabet) - 1)];
+    }
+    out[length] = '\0';
+}
+
+static void wifi_lab_scene_webfs_menu_on_enter(void* context) {
+    WifiLab* app = context;
+    submenu_reset(app->submenu);
+    submenu_set_header(app->submenu, "SD file server");
+    if(wlan_hal_is_started() && wlan_hal_is_connected()) {
+        submenu_add_item(
+            app->submenu, "Over my WiFi", WifiLabWebfsOverWifi, wifi_lab_submenu_callback, app);
+    }
+    submenu_add_item(
+        app->submenu, "Own hotspot", WifiLabWebfsHotspot, wifi_lab_submenu_callback, app);
+    view_dispatcher_switch_to_view(app->view_dispatcher, WifiLabViewSubmenu);
+}
+
+static bool wifi_lab_scene_webfs_menu_on_event(void* context, SceneManagerEvent event) {
+    WifiLab* app = context;
+    if(event.type != SceneManagerEventTypeCustom) return false;
+    if(event.event == WifiLabWebfsOverWifi || event.event == WifiLabWebfsHotspot) {
+        app->webfs_hotspot = event.event == WifiLabWebfsHotspot;
+        scene_manager_next_scene(app->scene_manager, WifiLabSceneWebfsConfirm);
+        return true;
+    }
+    return false;
+}
+
+static void wifi_lab_scene_webfs_menu_on_exit(void* context) {
+    WifiLab* app = context;
+    submenu_reset(app->submenu);
+}
+
+static void wifi_lab_scene_webfs_confirm_on_enter(void* context) {
+    WifiLab* app = context;
+    dialog_ex_reset(app->dialog);
+    dialog_ex_set_context(app->dialog, app);
+    dialog_ex_set_result_callback(app->dialog, wifi_lab_dialog_callback);
+    dialog_ex_set_header(app->dialog, "SD file server", 64, 2, AlignCenter, AlignTop);
+    dialog_ex_set_text(
+        app->dialog,
+        app->webfs_hotspot ?
+            "Opens a WPA2 hotspot.\nWiFi and Bluetooth\npause until you stop." :
+            "No login: anyone on this\nnetwork can read and\nchange the SD card.",
+        64,
+        16,
+        AlignCenter,
+        AlignTop);
+    dialog_ex_set_left_button_text(app->dialog, "Cancel");
+    dialog_ex_set_right_button_text(app->dialog, "Start");
+    view_dispatcher_switch_to_view(app->view_dispatcher, WifiLabViewDialog);
+}
+
+static bool wifi_lab_scene_webfs_confirm_on_event(void* context, SceneManagerEvent event) {
+    WifiLab* app = context;
+    if(event.type != SceneManagerEventTypeCustom) return false;
+    if(event.event == DialogExResultRight) {
+        scene_manager_next_scene(app->scene_manager, WifiLabSceneWebfsRun);
+        return true;
+    }
+    if(event.event == DialogExResultLeft) {
+        scene_manager_previous_scene(app->scene_manager);
+        return true;
+    }
+    return false;
+}
+
+static void wifi_lab_scene_webfs_confirm_on_exit(void* context) {
+    WifiLab* app = context;
+    dialog_ex_reset(app->dialog);
+}
+
+static void wifi_lab_webfs_button_callback(GuiButtonType result, InputType type, void* context) {
+    WifiLab* app = context;
+    if(result == GuiButtonTypeCenter && type == InputTypeShort) {
+        view_dispatcher_send_custom_event(app->view_dispatcher, WifiLabEventStop);
+    }
+}
+
+static void wifi_lab_webfs_render(WifiLab* app) {
+    char line[80];
+    char ip[16] = {0};
+    Widget* widget = app->widget;
+    widget_reset(widget);
+    if(!wlan_webfs_is_running()) {
+        widget_add_string_element(
+            widget, 64, 24, AlignCenter, AlignCenter, FontSecondary, "Could not start.");
+        widget_add_button_element(
+            widget, GuiButtonTypeCenter, "Back", wifi_lab_webfs_button_callback, app);
+        return;
+    }
+    wlan_webfs_get_ip(ip, sizeof(ip));
+    if(wlan_webfs_is_ap()) {
+        snprintf(line, sizeof(line), "WiFi: %s", app->webfs_ssid);
+        widget_add_string_element(widget, 64, 0, AlignCenter, AlignTop, FontSecondary, line);
+        snprintf(line, sizeof(line), "Pass: %s", app->webfs_pw);
+        widget_add_string_element(widget, 64, 11, AlignCenter, AlignTop, FontSecondary, line);
+        snprintf(line, sizeof(line), "http://%s", ip);
+        widget_add_string_element(widget, 64, 23, AlignCenter, AlignTop, FontPrimary, line);
+        snprintf(line, sizeof(line), "Clients: %d", app->webfs_clients);
+        widget_add_string_element(widget, 64, 37, AlignCenter, AlignTop, FontSecondary, line);
+    } else {
+        widget_add_string_element(
+            widget, 64, 0, AlignCenter, AlignTop, FontSecondary, "SD file server (no login)");
+        snprintf(line, sizeof(line), "http://%s", ip);
+        widget_add_string_element(widget, 64, 18, AlignCenter, AlignTop, FontPrimary, line);
+        widget_add_string_element(
+            widget, 64, 34, AlignCenter, AlignTop, FontSecondary, "Open it from this network");
+    }
+    widget_add_button_element(
+        widget, GuiButtonTypeCenter, "Stop", wifi_lab_webfs_button_callback, app);
+}
+
+static void wifi_lab_scene_webfs_run_on_enter(void* context) {
+    WifiLab* app = context;
+    view_dispatcher_switch_to_view(app->view_dispatcher, WifiLabViewLoading);
+    if(app->webfs_hotspot) {
+        wlan_webfs_config_load(app->webfs_ssid, app->webfs_pw);
+        if(strlen(app->webfs_pw) < 8 || strcmp(app->webfs_pw, WLAN_WEBFS_DEFAULT_PW) == 0) {
+            wifi_lab_webfs_random_password(app->webfs_pw, 10);
+            wlan_webfs_config_save(app->webfs_ssid, app->webfs_pw);
+        }
+        /* The engine switches the station radio off to run the hotspot; it is
+         * off (not joined) again when the hotspot stops. */
+        wlan_hal_ensure_worker();
+        wlan_webfs_start_ap(app->webfs_ssid, app->webfs_pw);
+        app->started_wifi = false;
+        app->joined = false;
+    } else {
+        wlan_webfs_start_sta();
+    }
+    app->webfs_clients = 0;
+    wifi_lab_webfs_render(app);
+    view_dispatcher_switch_to_view(app->view_dispatcher, WifiLabViewWidget);
+}
+
+static bool wifi_lab_scene_webfs_run_on_event(void* context, SceneManagerEvent event) {
+    WifiLab* app = context;
+    if(event.type == SceneManagerEventTypeTick) {
+        if(wlan_webfs_is_running() && wlan_webfs_is_ap()) {
+            const int clients = wlan_webfs_get_client_count();
+            if(clients != app->webfs_clients) {
+                app->webfs_clients = clients;
+                wifi_lab_webfs_render(app);
+            }
+        }
+        return true;
+    }
+    if(event.type == SceneManagerEventTypeBack ||
+       (event.type == SceneManagerEventTypeCustom && event.event == WifiLabEventStop)) {
+        /* Back to the main menu: its entries depend on the radio state. */
+        scene_manager_search_and_switch_to_previous_scene(app->scene_manager, WifiLabSceneStart);
+        return true;
+    }
+    return false;
+}
+
+static void wifi_lab_scene_webfs_run_on_exit(void* context) {
+    WifiLab* app = context;
+    wlan_webfs_stop();
+    widget_reset(app->widget);
+}
+
+/* -------------------------------------------------------- SMB browser --- */
+/*
+ * Upstream's libsmb2 client wrapper (applications/main/wlan_app/wlan_smb.c,
+ * compiled into this app): browse a file share and copy files to the SD card.
+ * Read-only towards the server. The server address is typed in: there is no
+ * network sweep here. Credentials stay in RAM and are never written to the card.
+ */
+
+#define WIFI_LAB_SMB_DOWNLOAD_DIR EXT_PATH("apps_data/wifi_lab/smb")
+#define WIFI_LAB_SMB_GET_FOLDER   0xFFFEu
+
+enum {
+    WifiLabSmbInputServer,
+    WifiLabSmbInputUser,
+    WifiLabSmbInputPassword,
+};
+
+static void wifi_lab_text_callback(void* context) {
+    WifiLab* app = context;
+    view_dispatcher_send_custom_event(app->view_dispatcher, WifiLabEventTextDone);
+}
+
+static bool wifi_lab_smb_ip_valid(const char* text) {
+    unsigned a, b, c, d;
+    char tail;
+    return sscanf(text, "%u.%u.%u.%u%c", &a, &b, &c, &d, &tail) == 4 && a < 256 && b < 256 &&
+           c < 256 && d < 256;
+}
+
+static void wifi_lab_smb_show_input(WifiLab* app) {
+    TextInput* input = app->text_input;
+    text_input_reset(input);
+    text_input_set_minimum_length(input, 0);
+    switch(app->smb_input) {
+    case WifiLabSmbInputServer:
+        text_input_set_header_text(input, "Server IP address");
+        text_input_set_result_callback(
+            input, wifi_lab_text_callback, app, app->smb_ip, sizeof(app->smb_ip), false);
+        break;
+    case WifiLabSmbInputUser:
+        text_input_set_header_text(input, "User (empty = guest)");
+        text_input_set_result_callback(
+            input, wifi_lab_text_callback, app, app->smb_user, sizeof(app->smb_user), false);
+        break;
+    default:
+        text_input_set_header_text(input, "Password (empty = none)");
+        text_input_set_result_callback(
+            input, wifi_lab_text_callback, app, app->smb_pass, sizeof(app->smb_pass), true);
+        break;
+    }
+    view_dispatcher_switch_to_view(app->view_dispatcher, WifiLabViewTextInput);
+}
+
+static void wifi_lab_scene_smb_input_on_enter(void* context) {
+    WifiLab* app = context;
+    wifi_lab_smb_show_input(app);
+}
+
+static bool wifi_lab_scene_smb_input_on_event(void* context, SceneManagerEvent event) {
+    WifiLab* app = context;
+    if(event.type == SceneManagerEventTypeCustom && event.event == WifiLabEventTextDone) {
+        if(app->smb_input == WifiLabSmbInputServer && !wifi_lab_smb_ip_valid(app->smb_ip)) {
+            wifi_lab_show_message(app, "Enter the server as an\nIP address, for example\n192.168.1.20");
+        } else if(app->smb_input < WifiLabSmbInputPassword) {
+            app->smb_input++;
+            wifi_lab_smb_show_input(app);
+        } else {
+            scene_manager_next_scene(app->scene_manager, WifiLabSceneSmbConnect);
+        }
+        return true;
+    }
+    if(event.type == SceneManagerEventTypeBack && app->smb_input > WifiLabSmbInputServer) {
+        app->smb_input--;
+        wifi_lab_smb_show_input(app);
+        return true;
+    }
+    return false;
+}
+
+static void wifi_lab_scene_smb_input_on_exit(void* context) {
+    WifiLab* app = context;
+    text_input_reset(app->text_input);
+}
+
+static void wifi_lab_scene_smb_connect_on_enter(void* context) {
+    WifiLab* app = context;
+    view_dispatcher_switch_to_view(app->view_dispatcher, WifiLabViewLoading);
+    app->smb_share[0] = '\0';
+    app->smb_path[0] = '\0';
+    wlan_smb_op_connect(app->smb, app->smb_ip, app->smb_user, app->smb_pass);
+    /* The engine holds its own copy for the session. */
+    memset(app->smb_pass, 0, sizeof(app->smb_pass));
+}
+
+static bool wifi_lab_scene_smb_connect_on_event(void* context, SceneManagerEvent event) {
+    WifiLab* app = context;
+    if(event.type == SceneManagerEventTypeTick) {
+        const WlanSmbState state = wlan_smb_state(app->smb);
+        if(state == WlanSmbStateReady) {
+            scene_manager_next_scene(app->scene_manager, WifiLabSceneSmbBrowse);
+        } else if(state == WlanSmbStateError) {
+            furi_string_printf(app->message, "Could not connect:\n%s", wlan_smb_error(app->smb));
+            wlan_smb_disconnect(app->smb);
+            scene_manager_previous_scene(app->scene_manager);
+            scene_manager_next_scene(app->scene_manager, WifiLabSceneMessage);
+        }
+        return true;
+    }
+    if(event.type == SceneManagerEventTypeBack) {
+        wlan_smb_disconnect(app->smb);
+        scene_manager_previous_scene(app->scene_manager);
+        return true;
+    }
+    return false;
+}
+
+static void wifi_lab_scene_smb_connect_on_exit(void* context) {
+    UNUSED(context);
+}
+
+static void wifi_lab_smb_size(uint64_t bytes, char* out, size_t size) {
+    if(bytes >= 1024ULL * 1024 * 1024) {
+        snprintf(out, size, "%luG", (unsigned long)(bytes / (1024ULL * 1024 * 1024)));
+    } else if(bytes >= 1024 * 1024) {
+        snprintf(out, size, "%luM", (unsigned long)(bytes / (1024 * 1024)));
+    } else if(bytes >= 1024) {
+        snprintf(out, size, "%luK", (unsigned long)(bytes / 1024));
+    } else {
+        snprintf(out, size, "%luB", (unsigned long)bytes);
+    }
+}
+
+static void wifi_lab_smb_path_parent(char* path) {
+    char* slash = strrchr(path, '/');
+    if(slash) {
+        *slash = '\0';
+    } else {
+        path[0] = '\0';
+    }
+}
+
+/* Go one level up. Returns false when already at the share list. */
+static bool wifi_lab_smb_up(WifiLab* app) {
+    if(app->smb_path[0]) {
+        wifi_lab_smb_path_parent(app->smb_path);
+        return true;
+    }
+    if(app->smb_share[0]) {
+        app->smb_share[0] = '\0';
+        return true;
+    }
+    return false;
+}
+
+static void wifi_lab_smb_load(WifiLab* app) {
+    view_dispatcher_switch_to_view(app->view_dispatcher, WifiLabViewLoading);
+    app->smb_loading = true;
+    wlan_smb_op_list(app->smb, app->smb_share, app->smb_path);
+}
+
+static void wifi_lab_smb_fill(WifiLab* app) {
+    char label[WLAN_SMB_NAME_MAX + 16];
+    const char* header = app->smb_ip;
+    if(app->smb_path[0]) {
+        const char* slash = strrchr(app->smb_path, '/');
+        header = slash ? slash + 1 : app->smb_path;
+    } else if(app->smb_share[0]) {
+        header = app->smb_share;
+    }
+    submenu_reset(app->submenu);
+    submenu_set_header(app->submenu, header);
+    if(app->smb_share[0]) {
+        submenu_add_item(
+            app->submenu,
+            "[Copy this folder to SD]",
+            WIFI_LAB_SMB_GET_FOLDER,
+            wifi_lab_submenu_callback,
+            app);
+    }
+    const uint16_t count = wlan_smb_entry_count(app->smb);
+    for(uint16_t i = 0; i < count; i++) {
+        if(!wlan_smb_entry(app->smb, i, &app->smb_entry)) continue;
+        if(app->smb_entry.is_dir) {
+            snprintf(label, sizeof(label), "%s/", app->smb_entry.name);
+        } else {
+            char size[12];
+            wifi_lab_smb_size(app->smb_entry.size, size, sizeof(size));
+            snprintf(label, sizeof(label), "%s  %s", app->smb_entry.name, size);
+        }
+        submenu_add_item(app->submenu, label, i, wifi_lab_submenu_callback, app);
+    }
+    if(count == 0 && !app->smb_share[0]) {
+        submenu_set_header(app->submenu, "No shares visible");
+    }
+    view_dispatcher_switch_to_view(app->view_dispatcher, WifiLabViewSubmenu);
+}
+
+static void wifi_lab_scene_smb_browse_on_enter(void* context) {
+    WifiLab* app = context;
+    wifi_lab_smb_load(app);
+}
+
+static bool wifi_lab_scene_smb_browse_on_event(void* context, SceneManagerEvent event) {
+    WifiLab* app = context;
+    if(event.type == SceneManagerEventTypeTick) {
+        if(app->smb_loading) {
+            const WlanSmbState state = wlan_smb_state(app->smb);
+            if(state == WlanSmbStateReady) {
+                app->smb_loading = false;
+                wifi_lab_smb_fill(app);
+            } else if(state == WlanSmbStateError) {
+                app->smb_loading = false;
+                furi_string_printf(app->message, "Could not open:\n%s", wlan_smb_error(app->smb));
+                if(wifi_lab_smb_up(app)) {
+                    /* Leaving the message re-enters this scene one level up. */
+                    scene_manager_next_scene(app->scene_manager, WifiLabSceneMessage);
+                } else {
+                    wlan_smb_disconnect(app->smb);
+                    scene_manager_search_and_switch_to_previous_scene(
+                        app->scene_manager, WifiLabSceneStart);
+                    scene_manager_next_scene(app->scene_manager, WifiLabSceneMessage);
+                }
+            }
+        }
+        return true;
+    }
+    if(event.type == SceneManagerEventTypeCustom) {
+        if(app->smb_loading) return true;
+        if(event.event == WIFI_LAB_SMB_GET_FOLDER) {
+            strlcpy(app->smb_dl_path, app->smb_path, sizeof(app->smb_dl_path));
+            app->smb_dl_is_dir = true;
+            scene_manager_next_scene(app->scene_manager, WifiLabSceneSmbConfirm);
+            return true;
+        }
+        if(!wlan_smb_entry(app->smb, (uint16_t)event.event, &app->smb_entry)) return true;
+        if(!app->smb_share[0]) {
+            strlcpy(app->smb_share, app->smb_entry.name, sizeof(app->smb_share));
+            app->smb_path[0] = '\0';
+            wifi_lab_smb_load(app);
+        } else {
+            const size_t used = strlen(app->smb_path);
+            const size_t need = used + 1 + strlen(app->smb_entry.name) + 1;
+            if(need > sizeof(app->smb_path)) return true; /* path too long to follow */
+            if(app->smb_entry.is_dir) {
+                snprintf(
+                    app->smb_path + used,
+                    sizeof(app->smb_path) - used,
+                    used ? "/%s" : "%s",
+                    app->smb_entry.name);
+                wifi_lab_smb_load(app);
+            } else {
+                snprintf(
+                    app->smb_dl_path,
+                    sizeof(app->smb_dl_path),
+                    used ? "%s/%s" : "%s%s",
+                    app->smb_path,
+                    app->smb_entry.name);
+                app->smb_dl_is_dir = false;
+                scene_manager_next_scene(app->scene_manager, WifiLabSceneSmbConfirm);
+            }
+        }
+        return true;
+    }
+    if(event.type == SceneManagerEventTypeBack) {
+        if(app->smb_loading) return true;
+        if(wifi_lab_smb_up(app)) {
+            wifi_lab_smb_load(app);
+        } else {
+            wlan_smb_disconnect(app->smb);
+            scene_manager_search_and_switch_to_previous_scene(
+                app->scene_manager, WifiLabSceneStart);
+        }
+        return true;
+    }
+    return false;
+}
+
+static void wifi_lab_scene_smb_browse_on_exit(void* context) {
+    WifiLab* app = context;
+    submenu_reset(app->submenu);
+}
+
+static void wifi_lab_scene_smb_confirm_on_enter(void* context) {
+    WifiLab* app = context;
+    const char* name = app->smb_dl_path[0] ? app->smb_dl_path : app->smb_share;
+    const char* slash = strrchr(name, '/');
+    dialog_ex_reset(app->dialog);
+    dialog_ex_set_context(app->dialog, app);
+    dialog_ex_set_result_callback(app->dialog, wifi_lab_dialog_callback);
+    dialog_ex_set_header(app->dialog, slash ? slash + 1 : name, 64, 2, AlignCenter, AlignTop);
+    dialog_ex_set_text(
+        app->dialog,
+        app->smb_dl_is_dir ? "Copy this folder and\neverything in it\nto the SD card?" :
+                             "Copy this file\nto the SD card?",
+        64,
+        16,
+        AlignCenter,
+        AlignTop);
+    dialog_ex_set_left_button_text(app->dialog, "Cancel");
+    dialog_ex_set_right_button_text(app->dialog, "Copy");
+    view_dispatcher_switch_to_view(app->view_dispatcher, WifiLabViewDialog);
+}
+
+static bool wifi_lab_scene_smb_confirm_on_event(void* context, SceneManagerEvent event) {
+    WifiLab* app = context;
+    if(event.type != SceneManagerEventTypeCustom) return false;
+    if(event.event == DialogExResultRight) {
+        scene_manager_next_scene(app->scene_manager, WifiLabSceneSmbDownload);
+        return true;
+    }
+    if(event.event == DialogExResultLeft) {
+        scene_manager_previous_scene(app->scene_manager);
+        return true;
+    }
+    return false;
+}
+
+static void wifi_lab_scene_smb_confirm_on_exit(void* context) {
+    WifiLab* app = context;
+    dialog_ex_reset(app->dialog);
+}
+
+static void wifi_lab_smb_download_render(WifiLab* app) {
+    char line[64];
+    const WlanSmbState state = wlan_smb_state(app->smb);
+    const uint64_t bytes = wlan_smb_dl_bytes_done(app->smb);
+    Widget* widget = app->widget;
+    widget_reset(widget);
+    widget_add_string_element(
+        widget,
+        64,
+        2,
+        AlignCenter,
+        AlignTop,
+        FontPrimary,
+        state == WlanSmbStateBusy ? "Copying..." : state == WlanSmbStateError ? "Failed" : "Done");
+    if(state == WlanSmbStateError) {
+        widget_add_text_scroll_element(widget, 0, 16, 128, 48, wlan_smb_error(app->smb));
+        return;
+    }
+    snprintf(line, sizeof(line), "%lu file(s)", (unsigned long)wlan_smb_dl_files_done(app->smb));
+    widget_add_string_element(widget, 64, 20, AlignCenter, AlignTop, FontSecondary, line);
+    snprintf(line, sizeof(line), "%lu KB", (unsigned long)(bytes / 1024));
+    widget_add_string_element(widget, 64, 32, AlignCenter, AlignTop, FontSecondary, line);
+    widget_add_string_element(
+        widget,
+        64,
+        46,
+        AlignCenter,
+        AlignTop,
+        FontSecondary,
+        state == WlanSmbStateBusy ? "Back cancels" : "apps_data/wifi_lab/smb");
+}
+
+static void wifi_lab_scene_smb_download_on_enter(void* context) {
+    WifiLab* app = context;
+    char local[80];
+    snprintf(local, sizeof(local), "%s/%s", WIFI_LAB_SMB_DOWNLOAD_DIR, app->smb_ip);
+    app->smb_download_done = false;
+    wlan_smb_op_download(app->smb, app->smb_share, app->smb_dl_path, app->smb_dl_is_dir, local);
+    wifi_lab_smb_download_render(app);
+    view_dispatcher_switch_to_view(app->view_dispatcher, WifiLabViewWidget);
+}
+
+static bool wifi_lab_scene_smb_download_on_event(void* context, SceneManagerEvent event) {
+    WifiLab* app = context;
+    if(event.type == SceneManagerEventTypeTick) {
+        if(!app->smb_download_done) {
+            app->smb_download_done = wlan_smb_state(app->smb) != WlanSmbStateBusy;
+            wifi_lab_smb_download_render(app);
+        }
+        return true;
+    }
+    if(event.type == SceneManagerEventTypeBack) {
+        /* on_exit cancels a running copy. */
+        scene_manager_search_and_switch_to_previous_scene(
+            app->scene_manager, WifiLabSceneSmbBrowse);
+        return true;
+    }
+    return false;
+}
+
+static void wifi_lab_scene_smb_download_on_exit(void* context) {
+    WifiLab* app = context;
+    if(wlan_smb_state(app->smb) == WlanSmbStateBusy) wlan_smb_cancel(app->smb);
+    widget_reset(app->widget);
+}
+
 static void (*const wifi_lab_on_enter[])(void*) = {
     [WifiLabSceneStart] = wifi_lab_scene_start_on_enter,
     [WifiLabSceneScan] = wifi_lab_scene_scan_on_enter,
@@ -689,6 +1330,14 @@ static void (*const wifi_lab_on_enter[])(void*) = {
     [WifiLabSceneSavePassword] = wifi_lab_scene_save_password_on_enter,
     [WifiLabSceneMessage] = wifi_lab_scene_message_on_enter,
     [WifiLabSceneStatus] = wifi_lab_scene_status_on_enter,
+    [WifiLabSceneWebfsMenu] = wifi_lab_scene_webfs_menu_on_enter,
+    [WifiLabSceneWebfsConfirm] = wifi_lab_scene_webfs_confirm_on_enter,
+    [WifiLabSceneWebfsRun] = wifi_lab_scene_webfs_run_on_enter,
+    [WifiLabSceneSmbInput] = wifi_lab_scene_smb_input_on_enter,
+    [WifiLabSceneSmbConnect] = wifi_lab_scene_smb_connect_on_enter,
+    [WifiLabSceneSmbBrowse] = wifi_lab_scene_smb_browse_on_enter,
+    [WifiLabSceneSmbConfirm] = wifi_lab_scene_smb_confirm_on_enter,
+    [WifiLabSceneSmbDownload] = wifi_lab_scene_smb_download_on_enter,
 };
 
 static bool (*const wifi_lab_on_event[])(void*, SceneManagerEvent) = {
@@ -702,6 +1351,14 @@ static bool (*const wifi_lab_on_event[])(void*, SceneManagerEvent) = {
     [WifiLabSceneSavePassword] = wifi_lab_scene_save_password_on_event,
     [WifiLabSceneMessage] = wifi_lab_scene_message_on_event,
     [WifiLabSceneStatus] = wifi_lab_scene_status_on_event,
+    [WifiLabSceneWebfsMenu] = wifi_lab_scene_webfs_menu_on_event,
+    [WifiLabSceneWebfsConfirm] = wifi_lab_scene_webfs_confirm_on_event,
+    [WifiLabSceneWebfsRun] = wifi_lab_scene_webfs_run_on_event,
+    [WifiLabSceneSmbInput] = wifi_lab_scene_smb_input_on_event,
+    [WifiLabSceneSmbConnect] = wifi_lab_scene_smb_connect_on_event,
+    [WifiLabSceneSmbBrowse] = wifi_lab_scene_smb_browse_on_event,
+    [WifiLabSceneSmbConfirm] = wifi_lab_scene_smb_confirm_on_event,
+    [WifiLabSceneSmbDownload] = wifi_lab_scene_smb_download_on_event,
 };
 
 static void (*const wifi_lab_on_exit[])(void*) = {
@@ -715,6 +1372,14 @@ static void (*const wifi_lab_on_exit[])(void*) = {
     [WifiLabSceneSavePassword] = wifi_lab_scene_save_password_on_exit,
     [WifiLabSceneMessage] = wifi_lab_scene_message_on_exit,
     [WifiLabSceneStatus] = wifi_lab_scene_status_on_exit,
+    [WifiLabSceneWebfsMenu] = wifi_lab_scene_webfs_menu_on_exit,
+    [WifiLabSceneWebfsConfirm] = wifi_lab_scene_webfs_confirm_on_exit,
+    [WifiLabSceneWebfsRun] = wifi_lab_scene_webfs_run_on_exit,
+    [WifiLabSceneSmbInput] = wifi_lab_scene_smb_input_on_exit,
+    [WifiLabSceneSmbConnect] = wifi_lab_scene_smb_connect_on_exit,
+    [WifiLabSceneSmbBrowse] = wifi_lab_scene_smb_browse_on_exit,
+    [WifiLabSceneSmbConfirm] = wifi_lab_scene_smb_confirm_on_exit,
+    [WifiLabSceneSmbDownload] = wifi_lab_scene_smb_download_on_exit,
 };
 
 static const SceneManagerHandlers wifi_lab_scene_handlers = {
@@ -744,6 +1409,7 @@ static void wifi_lab_tick_event_callback(void* context) {
 int32_t wifi_lab_app(void* p) {
     UNUSED(p);
     WifiLab* app = malloc(sizeof(WifiLab));
+    memset(app, 0, sizeof(WifiLab));
     app->message = furi_string_alloc();
     app->gui = furi_record_open(RECORD_GUI);
     app->scene_manager = scene_manager_alloc(&wifi_lab_scene_handlers, app);
@@ -775,6 +1441,12 @@ int32_t wifi_lab_app(void* p) {
     view_dispatcher_run(app->view_dispatcher);
 
     wifi_lab_scan_join(app);
+    if(wlan_webfs_is_running()) wlan_webfs_stop();
+    if(app->smb) {
+        wlan_smb_disconnect(app->smb);
+        wlan_smb_free(app->smb);
+        memset(app->smb_user, 0, sizeof(app->smb_user));
+    }
     /* If this app switched the radio on only to look around, switch it off again
      * (which also hands the shared radio back to Bluetooth). After a join the
      * WiFi service owns it. */

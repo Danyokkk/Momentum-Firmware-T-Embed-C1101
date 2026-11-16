@@ -119,6 +119,20 @@ Bluetooth Core Specification Supplement's AD-structure format, not copied.
 `applications/main/wifi_lab/` is new code that calls the port's existing
 `wlan_hal` and `wifi` service APIs.
 
+Its SD file server and SMB browser (added 2026-11-16) are new front-end scenes
+over two of upstream's engines, compiled unmodified from where upstream keeps
+them (`sources=` in `applications/main/wifi_lab/application.fam`):
+
+| File | What it is | Origin |
+| --- | --- | --- |
+| `applications/main/wlan_app/wlan_webfs.{c,h}` | HTTP file manager for the SD card (hotspot or existing connection) | upstream port, unmodified |
+| `applications/main/wlan_app/wlan_smb.{c,h}` | SMB2/3 client wrapper over `components/libsmb2` | upstream port, unmodified |
+
+Upstream's own scenes for these features are not used: they depend on the
+excluded WiFi app (its LAN host sweep feeds the SMB server list). The lab
+front end adds the start confirmations, the random hotspot password and the
+typed-in server address.
+
 ### 5. POCSAG and additional Sub-GHz protocols (Momentum → this fork)
 
 | | |

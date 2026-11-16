@@ -59,10 +59,12 @@ DENY_SYMBOLS = [
 ]
 
 # Files inside an excluded app's directory that other, kept apps compile.
-# Each one was read and is GUI-only.
+# Each one was read: GUI-only views, an HTTP file manager and an SMB client.
 ALLOWED_SHARED_SOURCES = {
     "applications/main/wlan_app/views/wlan_lan_view.c",   # list view used by Streaming
     "applications/main/wlan_app/views/wlan_view_common.c",  # its drawing helpers
+    "applications/main/wlan_app/wlan_webfs.c",  # SD file server engine, used by WiFi Lab
+    "applications/main/wlan_app/wlan_smb.c",    # SMB client (libsmb2 wrapper), used by WiFi Lab
 }
 
 SDKCONFIG_EXPECT = {
