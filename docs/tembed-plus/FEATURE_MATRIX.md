@@ -79,6 +79,7 @@ ships it and it still compiles", not "it works".
 | Feature | Status | Evidence | Notes | Acceptance check on hardware |
 | --- | --- | --- | --- | --- |
 | Learn, decode, raw capture, saved remotes, universal remotes, transmit | built | build | protocol set is identical to Momentum and Unleashed (NEC, Kaseikyo, Pioneer, RC5, RC6, RCA, Samsung, SIRC) | learn a TV remote button, replay it at 3 m |
+| **Universal remotes: Blu-ray/DVD, Monitors, Digital Signs** (from Momentum) | new | build (scenes, icons and `.ir` libraries verified in the image) | three more universal-remote libraries, added to the Universal menu beside TVs/Audio/ACs/… | open each, send a command to your own device |
 | Extra protocol decoders | — | — | nothing to port: all three projects carry the same eight | — |
 
 ## NFC (PN532, 13.56 MHz)

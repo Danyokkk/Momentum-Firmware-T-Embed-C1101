@@ -159,7 +159,16 @@ Freezer capture exists in Unleashed's unit-test resources
 (`applications/debug/unit_tests/resources/unit_tests/subghz/freezer*.sub`) for
 a later host test. Prastel was left out: it needs Unleashed's `public_api.h`.
 
-### 6. Web flasher and CI
+### 6. Infrared universal remotes (Momentum → this fork)
+
+| | |
+| --- | --- |
+| Source | Momentum `d3f89df`: `applications/main/infrared/scenes/infrared_scene_universal_{bluray,monitor,digital_sign}.c`, the `.ir` libraries `resources/infrared/assets/{bluray_dvd,monitor,digital_sign}.ir`, and 25 button icons from `assets/icons/Infrared/*.png` |
+| Destination | the same scene and asset paths here; the scenes are wired into `infrared_scene_config.h` and the Universal menu (`infrared_scene_universal.c`) |
+| Icons | the 25 PNGs the new scenes need and the global set lacked were converted with this port's own `tools/fam/compile_icons.py` (Pillow) and appended to `components/assets/assets_icons.{c,h}` between `BEGIN/END tembed-plus IR universal-remote icons` markers. They use the uncompressed icon format (first byte `0x00`), which the renderer supports, so they are slightly larger than the heatshrink-compressed originals |
+| Not ported | the `from_file` scene (load a custom `.ir` universal library) needs a file-browser hook; still todo |
+
+### 7. Web flasher and CI
 
 | | |
 | --- | --- |

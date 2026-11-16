@@ -119,7 +119,8 @@ Hardware: IR LED on GPIO2, receiver on GPIO1 (RMT).
 | Saved Remotes, edit, rename, delete | yes | present | build |
 | 14 protocol variants in 8 families | identical set | present | build |
 | Universal Remotes: TVs, Audio, Projectors, LEDs, Fans, ACs | yes (6 libraries) | present | build |
-| Universal Remotes: Blu-ray/DVD, Monitors, Digital Signs, Load from Library File | no; needs three scenes, their icons and three `.ir` libraries from Momentum | todo | — |
+| Universal Remotes: Blu-ray/DVD, Monitors, Digital Signs | added: three scenes + three `.ir` libraries from Momentum, wired into the Universal menu. The 25 button icons they need were generated from Momentum's PNGs with the port's own `compile_icons.py` and appended to `components/assets/assets_icons.{c,h}` | added | build (scenes, icons and `.ir` assets verified in the image) |
+| Universal Remotes: Load from Library File | no; needs the `from_file` scene and a file-browser hook | todo | — |
 | Easy-learn (preset button names) | no | todo | — |
 | GPIO settings (external IR module) | "Infrared Settings" exists; the external pin is GPIO43, which the Plus nRF24 uses | n/a on a Plus | — |
 | IR CLI | not built | todo | — |
@@ -277,12 +278,13 @@ such as "present / todo" counts once, under "present"):
 
 | present | added | todo | add-on | n/a | withheld |
 | --- | --- | --- | --- | --- | --- |
-| 47 | 21 | 26 | 5 | 11 | 38 |
+| 47 | 22 | 26 | 5 | 11 | 38 |
 
-The "todo" column is the remaining work towards parity. The largest items:
-the three extra IR universal remotes, a confirmed-per-action HID remote,
-System/Clock settings, archive search and file-browser options, an on-device
-backup, and a rebuilt mesh. Added in 2026-11: POCSAG, X10, AllStar Firefly,
+The "todo" column is the remaining work towards parity. The largest remaining
+items: Clock & Alarm settings (needs an RTC-alarm HAL), archive search and
+file-browser options, an on-device backup, a rebuilt mesh, and the extra NFC
+parsers. Added in 2026-11: 12 Sub-GHz protocols (POCSAG, X10, AllStar Firefly,
 Nord Ice, Hörmann BiSecur, Doorbell32, KeyFinder2, Freezer, FAAC TM, Proteco,
-Telcoma EDGE and BelKorn (12 Sub-GHz protocols). Only Prastel remains, pending
-its Unleashed `public_api.h` layer.
+Telcoma EDGE, BelKorn — only Prastel remains); the System settings app; the
+USB and Bluetooth HID remotes (stealth jiggler withheld); an `i2cscan` CLI
+command; and the Blu-ray/DVD, Monitor and Digital-sign IR universal remotes.
