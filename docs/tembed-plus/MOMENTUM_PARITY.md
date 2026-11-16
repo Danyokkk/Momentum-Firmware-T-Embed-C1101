@@ -44,7 +44,9 @@ Hardware: CC1101 on SPI2 (CS 12, GDO0 3, GDO2 38), band switch GPIO47/48.
 | Frequency Analyzer | yes | present | build |
 | RF Spectrum (port extra, not in Momentum) | yes | present | build |
 | Receiver config: frequency, modulation, hopping, RSSI threshold, Bin RAW, ignore filters, sound, lock keyboard | yes (port's set) | present | build |
-| Receiver config: Repeater, Remove Duplicates, Delete Old Signals, Autosave, Ignore Weather/TPMS toggles | no | todo | — |
+| Receiver config: Autosave | added: an "Autosave received signals" toggle; when on, every saveable decoded signal is written to `/subghz/Autosave` under a timestamped name. Receive-side only; TX gates still apply to replays | added | build |
+| Receiver config: Delete Old Signals | already present ("Delete old signals when memory is full") | present | build |
+| Receiver config: Repeater, Remove Duplicates, split Ignore Weather/TPMS | no (the port already dedupes consecutive repeats and has a combined "Ignore Sensors"; Repeater relays signals) | todo | — |
 | 58 registered protocols | the port registers its own 58 (near-identical list; adds Holtek HT6P20B and Agilize); AllStar Firefly and Nord Ice added here (below) | present | build |
 | 25 weather-station protocols (present in Momentum's tree but commented out of its registry) | registered and active here | added | host: 4 decoders against 5 real captures, 21 against synthetic fixtures (see `tests/subghz_ws/README.md`) |
 | TPMS Schrader GG4 (commented out in Momentum) | active, plus Ford, Renault, Citroën, PMV-107J | present | build |
@@ -278,7 +280,7 @@ such as "present / todo" counts once, under "present"):
 
 | present | added | todo | add-on | n/a | withheld |
 | --- | --- | --- | --- | --- | --- |
-| 47 | 24 | 24 | 5 | 11 | 38 |
+| 48 | 25 | 24 | 5 | 11 | 38 |
 
 The "todo" column is the remaining work towards parity. The largest remaining
 items: Clock & Alarm settings (needs an RTC-alarm HAL), archive search and

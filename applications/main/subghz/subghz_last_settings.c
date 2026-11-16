@@ -12,6 +12,7 @@
 #define SUBGHZ_LAST_SETTING_FIELD_FREQUENCY_ANALYZER_FEEDBACK_LEVEL "FeedbackLevel"
 #define SUBGHZ_LAST_SETTING_FIELD_FREQUENCY_ANALYZER_TRIGGER        "FATrigger"
 #define SUBGHZ_LAST_SETTING_FIELD_PROTOCOL_FILE_NAMES               "ProtocolNames"
+#define SUBGHZ_LAST_SETTING_FIELD_AUTOSAVE                          "Autosave"
 #define SUBGHZ_LAST_SETTING_FIELD_HOPPING_ENABLE                    "Hopping"
 #define SUBGHZ_LAST_SETTING_FIELD_IGNORE_FILTER                     "IgnoreFilter"
 #define SUBGHZ_LAST_SETTING_FIELD_FILTER                            "Filter"
@@ -47,6 +48,7 @@ void subghz_last_settings_load(SubGhzLastSettings* instance, size_t preset_count
     instance->rssi = SUBGHZ_RAW_THRESHOLD_MIN;
     instance->hopping_threshold = -90.0f;
     instance->leds_and_amp = true;
+    instance->autosave = false;
 
     Storage* storage = furi_record_open(RECORD_STORAGE);
     FlipperFormat* fff_data_file = flipper_format_file_alloc(storage);
@@ -89,6 +91,13 @@ void subghz_last_settings_load(SubGhzLastSettings* instance, size_t preset_count
                    fff_data_file,
                    SUBGHZ_LAST_SETTING_FIELD_PROTOCOL_FILE_NAMES,
                    &instance->protocol_file_names,
+                   1)) {
+                flipper_format_rewind(fff_data_file);
+            }
+            if(!flipper_format_read_bool(
+                   fff_data_file,
+                   SUBGHZ_LAST_SETTING_FIELD_AUTOSAVE,
+                   &instance->autosave,
                    1)) {
                 flipper_format_rewind(fff_data_file);
             }
@@ -215,6 +224,10 @@ bool subghz_last_settings_save(SubGhzLastSettings* instance) {
                SUBGHZ_LAST_SETTING_FIELD_PROTOCOL_FILE_NAMES,
                &instance->protocol_file_names,
                1)) {
+            break;
+        }
+        if(!flipper_format_write_bool(
+               file, SUBGHZ_LAST_SETTING_FIELD_AUTOSAVE, &instance->autosave, 1)) {
             break;
         }
         if(!flipper_format_write_bool(

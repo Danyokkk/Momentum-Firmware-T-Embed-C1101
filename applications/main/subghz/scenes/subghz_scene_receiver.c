@@ -1,6 +1,8 @@
 #include "../subghz_i.h"
 #include <dolphin/dolphin.h>
 #include <lib/subghz/protocols/bin_raw.h>
+#include <toolbox/name_generator.h> // autosave filenames
+#include <storage/storage.h>
 
 #define TAG "SubGhzSceneReceiver"
 
@@ -141,6 +143,38 @@ static void subghz_scene_add_to_history_callback(
                 furi_string_get_cstr(item_name),
                 furi_string_get_cstr(item_time),
                 subghz_history_get_type_protocol(history, idx));
+
+            /* Autosave: write every saveable received signal to /subghz/Autosave
+             * under a timestamped name. Receive-side only; the TX gates still
+             * apply to anything replayed from these files. */
+            if((decoder_base->protocol->flag & SubGhzProtocolFlag_Save) &&
+               subghz->last_settings->autosave) {
+                Storage* storage = furi_record_open(RECORD_STORAGE);
+                storage_simply_mkdir(storage, SUBGHZ_APP_FOLDER "/Autosave");
+                char stem[SUBGHZ_MAX_LEN_NAME] = {0};
+                const char* prefix = subghz->last_settings->protocol_file_names ?
+                                         decoder_base->protocol->name :
+                                         SUBGHZ_APP_FILENAME_PREFIX;
+                DateTime time = subghz_history_get_datetime(history, idx);
+                name_generator_make_detailed_datetime(stem, sizeof(stem), prefix, &time);
+                FuriString* unique = furi_string_alloc();
+                storage_get_next_filename(
+                    storage,
+                    SUBGHZ_APP_FOLDER "/Autosave",
+                    stem,
+                    SUBGHZ_APP_FILENAME_EXTENSION,
+                    unique,
+                    SUBGHZ_MAX_LEN_NAME);
+                FuriString* path = furi_string_alloc_printf(
+                    SUBGHZ_APP_FOLDER "/Autosave/%s%s",
+                    furi_string_get_cstr(unique),
+                    SUBGHZ_APP_FILENAME_EXTENSION);
+                furi_record_close(RECORD_STORAGE);
+                subghz_save_protocol_to_file(
+                    subghz, subghz_history_get_raw_data(history, idx), furi_string_get_cstr(path));
+                furi_string_free(path);
+                furi_string_free(unique);
+            }
 
             subghz_scene_receiver_update_statusbar(subghz);
             if(subghz_history_get_text_space_left(subghz->history, NULL)) {
