@@ -69,6 +69,7 @@ was fixed here. Upstream's own CI builds only four of the eleven profiles.
 | `tests/subghz_ws/run.py` | 2130 checks pass | 25 weather decoders: 4 against 5 real captures, 21 against synthetic fixtures; key-file round trips; damaged files; noise and 2 M-pulse fuzz; regression tests for the fixed decoder bugs |
 | `tests/subghz_region/run.py` | 212 checks pass | region preset table and lookup; default-deny |
 | `tests/subghz_pocsag/run.py` | 4 cases pass | POCSAG decode replayed from an independent encoder: 1200/512 bps, numeric + alphanumeric, multi-batch; address and text recovered |
+| `tests/rtc_alarm/run.py` | passes | the daily-alarm firing decision (`furi_hal_rtc_alarm_due`): fires once per matching minute, re-arms after, next-day and midnight cases |
 | `tests/ble_lab/run.py` | 29 checks pass (one of them a 20 000-case fuzz loop) | BLE advertisement parser, including malformed input |
 | `check_lab_exclusions.py` | passes | 4 excluded apps, 54 excluded source globs, 18 symbol rules on the linked image |
 | `tests/web/test_md5.mjs` | passes (Node) | the web flasher's MD5 against the RFC 1321 vectors and Node's crypto, from 0 bytes to 16 MB |

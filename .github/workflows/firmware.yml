@@ -35,6 +35,8 @@ jobs:
         run: python3 tests/subghz_region/run.py
       - name: Sub-GHz POCSAG pager decoder
         run: python3 tests/subghz_pocsag/run.py
+      - name: RTC alarm firing logic
+        run: python3 tests/rtc_alarm/run.py
       - name: BLE Lab advertisement parser
         run: python3 tests/ble_lab/run.py
       - name: Web flasher MD5

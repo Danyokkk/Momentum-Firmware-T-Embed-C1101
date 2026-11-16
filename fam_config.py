@@ -42,11 +42,10 @@ APPS = [
     "example_apps_assets",
     "example_number_input",
     "clock",
+    "clock_settings",  # Clock & Alarm (daily alarm via the new RTC-alarm HAL)
+    "clock_settings_start",  # registers the alarm callback at boot
     "hid_ble",  # Bluetooth Remote (user-driven HID: keyboard, media, mouse, PTT)
     "hid_usb",  # USB Keyboard & Mouse remote (user-driven)
-    # "clock_settings" / "clock_settings_start" need an RTC-alarm HAL this
-    # ESP32 port lacks (furi_hal_rtc_set_alarm / furi_hal_clock.h). Left out
-    # until that HAL is implemented; the Clock stopwatch app above still builds.
     "bad_usb",
     "subghz",
     # "subghz_remote" bundles its own copy of helpers/txrx/subghz_txrx.c, which

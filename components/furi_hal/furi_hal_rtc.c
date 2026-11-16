@@ -2,7 +2,10 @@
 
 #include <esp_err.h>
 #include <esp_log.h>
+#include <esp_timer.h>
 #include <nvs.h>
+
+#include "furi_hal_rtc_alarm_logic.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -346,4 +349,62 @@ FuriHalRtcLocaleUnits furi_hal_rtc_get_locale_units(void) {
 
 void furi_hal_rtc_set_locale_units(FuriHalRtcLocaleUnits format) {
     furi_hal_rtc.locale_units = format;
+}
+
+/* -------------------------------------------------------------- alarm --- */
+/* A daily alarm driven by a 1 Hz esp_timer rather than a hardware RTC
+ * interrupt (the original Flipper uses the STM32 RTC alarm). Kept in RAM only:
+ * it is not retained across a reboot, so clock_settings re-arms it from the UI.
+ * The decision to fire lives in furi_hal_rtc_alarm_logic.h so it can be
+ * host-tested (tests/rtc_alarm). */
+static struct {
+    DateTime time;
+    bool enabled;
+    FuriHalRtcAlarmCallback callback;
+    void* context;
+    esp_timer_handle_t timer;
+    int last_fired_minute_of_day;
+} furi_hal_rtc_alarm = {.last_fired_minute_of_day = -1};
+
+static void furi_hal_rtc_alarm_tick(void* arg) {
+    (void)arg;
+    if(!furi_hal_rtc_alarm.enabled || furi_hal_rtc_alarm.callback == NULL) {
+        return;
+    }
+    DateTime now = {0};
+    furi_hal_rtc_get_datetime(&now);
+    const int now_mod = now.hour * 60 + now.minute;
+    const int alarm_mod = furi_hal_rtc_alarm.time.hour * 60 + furi_hal_rtc_alarm.time.minute;
+    if(furi_hal_rtc_alarm_due(now_mod, alarm_mod, &furi_hal_rtc_alarm.last_fired_minute_of_day)) {
+        furi_hal_rtc_alarm.callback(furi_hal_rtc_alarm.context);
+    }
+}
+
+void furi_hal_rtc_set_alarm(const DateTime* datetime, bool enabled) {
+    if(datetime != NULL) {
+        furi_hal_rtc_alarm.time = *datetime;
+    }
+    furi_hal_rtc_alarm.enabled = enabled && (datetime != NULL || furi_hal_rtc_alarm.enabled);
+    furi_hal_rtc_alarm.last_fired_minute_of_day = -1; /* re-arm */
+}
+
+bool furi_hal_rtc_get_alarm(DateTime* datetime) {
+    if(datetime != NULL) {
+        *datetime = furi_hal_rtc_alarm.time;
+    }
+    return furi_hal_rtc_alarm.enabled;
+}
+
+void furi_hal_rtc_set_alarm_callback(FuriHalRtcAlarmCallback callback, void* context) {
+    furi_hal_rtc_alarm.callback = callback;
+    furi_hal_rtc_alarm.context = context;
+    if(callback != NULL && furi_hal_rtc_alarm.timer == NULL) {
+        const esp_timer_create_args_t args = {
+            .callback = furi_hal_rtc_alarm_tick,
+            .name = "rtc_alarm",
+        };
+        if(esp_timer_create(&args, &furi_hal_rtc_alarm.timer) == ESP_OK) {
+            esp_timer_start_periodic(furi_hal_rtc_alarm.timer, 1000000); /* 1 s */
+        }
+    }
 }

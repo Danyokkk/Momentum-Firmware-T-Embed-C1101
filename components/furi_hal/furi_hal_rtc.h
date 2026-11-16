@@ -104,6 +104,21 @@ void furi_hal_rtc_get_datetime(DateTime* datetime);
 void furi_hal_rtc_set_datetime(DateTime* datetime);
 uint32_t furi_hal_rtc_get_timestamp(void);
 
+/** Daily alarm (hour/minute). Fired by a 1 Hz software timer, not a hardware RTC
+ * interrupt, and held in RAM only: it is not retained across a reboot. */
+typedef void (*FuriHalRtcAlarmCallback)(void* context);
+
+/** Set or update the daily alarm. datetime==NULL or enabled==false disables it;
+ * only the hour and minute are used. */
+void furi_hal_rtc_set_alarm(const DateTime* datetime, bool enabled);
+
+/** Copy the alarm time into datetime (if not NULL); returns whether it is enabled. */
+bool furi_hal_rtc_get_alarm(DateTime* datetime);
+
+/** Register the callback fired when the alarm time is reached (starts the timer
+ * on first use). The callback runs in the timer task, so it must be quick. */
+void furi_hal_rtc_set_alarm_callback(FuriHalRtcAlarmCallback callback, void* context);
+
 FuriHalRtcLocaleTimeFormat furi_hal_rtc_get_locale_timeformat(void);
 void furi_hal_rtc_set_locale_timeformat(FuriHalRtcLocaleTimeFormat format);
 FuriHalRtcLocaleDateFormat furi_hal_rtc_get_locale_dateformat(void);

@@ -217,7 +217,7 @@ Momentum firmware has no Wi-Fi; it relies on external ESP boards and apps
 | Power settings: battery info, auto power-off, limit charge, reboot | yes, plus light-sleep options | present | build |
 | Storage settings: SD info, format, unmount, benchmark, factory reset | yes | present | build |
 | System settings: units, time/date format, log level, hand orientation, sleep method | `system_settings` app now built (added to `fam_config.py APPS`) | added | build |
-| Clock & alarm settings | still not built: `clock_settings` needs an RTC-alarm HAL this ESP32 port lacks (`furi_hal_rtc_set_alarm`, `furi_hal_clock.h`). The stopwatch "Clock" app exists | todo (needs HAL) | — |
+| Clock & alarm settings | `clock_settings` built now. A daily-alarm HAL was added to `furi_hal_rtc` (set/get/callback, driven by a 1 Hz `esp_timer`, RAM-only so not retained across reboot); `furi_hal_clock.h` is a stub | added | build; host test of the firing logic (`tests/rtc_alarm`). The timer firing and the alarm sound are a hardware check |
 | Input settings (vibro) | no | n/a | — |
 | Name and shell colour spoofing | "Spoofing Options" app | present | build |
 | Dolphin level/XP editing | no | todo (cosmetic) | — |
@@ -278,7 +278,7 @@ such as "present / todo" counts once, under "present"):
 
 | present | added | todo | add-on | n/a | withheld |
 | --- | --- | --- | --- | --- | --- |
-| 47 | 23 | 25 | 5 | 11 | 38 |
+| 47 | 24 | 24 | 5 | 11 | 38 |
 
 The "todo" column is the remaining work towards parity. The largest remaining
 items: Clock & Alarm settings (needs an RTC-alarm HAL), archive search and
