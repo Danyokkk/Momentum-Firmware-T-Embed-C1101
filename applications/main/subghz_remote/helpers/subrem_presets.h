@@ -1,7 +1,7 @@
 #pragma once
 
 #include "subrem_types.h"
-#include "txrx/subghz_txrx.h"
+#include "../../subghz/helpers/subghz_txrx.h"
 
 #include <flipper_format/flipper_format_i.h>
 #include <lib/subghz/types.h>

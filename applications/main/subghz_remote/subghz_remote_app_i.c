@@ -1,10 +1,10 @@
 #include "subghz_remote_app_i.h"
-#include "helpers/txrx/subghz_txrx_i.h"
+#include "../subghz/helpers/subghz_txrx_i.h"
 #include <lib/toolbox/path.h>
 #include <toolbox/strint.h>
 #include <flipper_format/flipper_format_i.h>
 
-#include "helpers/txrx/subghz_txrx.h"
+#include "../subghz/helpers/subghz_txrx.h"
 #ifndef FW_ORIGIN_Official
 #include <lib/subghz/blocks/custom_btn.h>
 #endif
@@ -227,6 +227,28 @@ void subrem_save_active_sub(void* context) {
         sub_preset->fff_data, furi_string_get_cstr(sub_preset->file_path));
 }
 
+#ifndef FW_ORIGIN_Official
+/* Deserialize the preset into a throw-away encoder.
+ *
+ * The txrx helper bundled with this app deserialized twice inside
+ * subghz_txrx_tx_start(): once so the protocol could report custom-button
+ * support, then again with the button applied. The Sub-GHz app's helper, which
+ * this build links instead, deserializes once, so the first pass is done here.
+ * The encoder comes from subghz_transmitter_alloc_init(), i.e. the same gated
+ * path as a real transmission (no encoder for rolling-code protocols in the
+ * lab profile). Nothing is transmitted by this function. */
+static bool subrem_custom_button_deserialize(SubGhzRemoteApp* app, SubRemSubFilePreset* sub_preset) {
+    SubGhzTransmitter* transmitter = subghz_transmitter_alloc_init(
+        app->txrx->environment, furi_string_get_cstr(sub_preset->protocol_name));
+    if(!transmitter) return false;
+
+    bool ret = subghz_transmitter_deserialize(transmitter, sub_preset->fff_data) ==
+               SubGhzProtocolStatusOk;
+    subghz_transmitter_free(transmitter);
+    return ret;
+}
+#endif
+
 bool subrem_tx_start_sub(SubGhzRemoteApp* app, SubRemSubFilePreset* sub_preset) {
     furi_assert(app);
     furi_assert(sub_preset);
@@ -250,13 +272,29 @@ bool subrem_tx_start_sub(SubGhzRemoteApp* app, SubRemSubFilePreset* sub_preset) 
             0);
 #ifndef FW_ORIGIN_Official
         subghz_custom_btns_reset();
-        subghz_txrx_custom_button_reset(app->txrx);
 
-        subghz_txrx_custom_button_set(app->txrx, sub_preset->button);
+        // RAW has no custom buttons, and its deserialize opens the capture file
+        if(sub_preset->button != SUBGHZ_CUSTOM_BTN_OK &&
+           sub_preset->type != SubGhzProtocolTypeRAW &&
+           subrem_custom_button_deserialize(app, sub_preset) && subghz_custom_btn_is_allowed()) {
+            // Picked up by the deserialize in subghz_txrx_tx_start()
+            subghz_custom_btn_set(sub_preset->button);
+        }
 #endif
         if(subghz_txrx_tx_start(app->txrx, sub_preset->fff_data) == SubGhzTxRxStartTxStateOk) {
             ret = true;
         }
+#ifndef FW_ORIGIN_Official
+        else {
+            // Not transmitting, so subrem_tx_stop_sub() has no encoder to restore
+            // the original button with: do it here.
+            if(subghz_custom_btn_get() != SUBGHZ_CUSTOM_BTN_OK) {
+                subghz_custom_btn_set(SUBGHZ_CUSTOM_BTN_OK);
+                subrem_custom_button_deserialize(app, sub_preset);
+            }
+            subghz_custom_btns_reset();
+        }
+#endif
     }
 
     return ret;
@@ -270,7 +308,6 @@ bool subrem_tx_stop_sub(SubGhzRemoteApp* app, bool forced) {
 #ifndef FW_ORIGIN_Official
         if(subghz_custom_btn_get() != SUBGHZ_CUSTOM_BTN_OK) {
             subghz_custom_btn_set(SUBGHZ_CUSTOM_BTN_OK);
-            subghz_txrx_custom_button_reset(app->txrx);
 
             // Call deserialize yet another time to restore the original button if a custom button was used
             subghz_transmitter_deserialize(app->txrx->transmitter, sub_preset->fff_data);

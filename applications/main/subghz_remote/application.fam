@@ -29,6 +29,16 @@ App(
     requires=[
         "gui",
         "dialogs",
+        "subghz",
+    ],
+    # helpers/txrx/subghz_txrx.c is upstream's bundled copy of the Sub-GHz
+    # app's TX/RX helper (needed when this is a standalone FAP). Built into the
+    # image it would define the same globals as
+    # ../subghz/helpers/subghz_txrx.c, so it is not compiled; the app includes
+    # and links the Sub-GHz app's helper instead (lab TX gating included).
+    sources=[
+        "*.c*",
+        "!helpers/txrx/subghz_txrx.c",
     ],
     stack_size=2 * 1024,
     targets=["f32"],

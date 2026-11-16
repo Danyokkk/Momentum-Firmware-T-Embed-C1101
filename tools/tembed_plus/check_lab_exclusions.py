@@ -36,6 +36,8 @@ DENY_SYMBOLS = [
     (r"^wlan_app(_\w+)?$", "upstream WiFi attack app"),
     (r"^wlan_(netcut|mitm|cred_sniff|html_inject|printhijack|smart_deauth|airsnitch)\w*$",
      "Wi-Fi MITM / deauth helpers"),
+    (r"^wlan_airprint_start_(spam|clone|capture)$|^wlan_airprint_get_spam_count$",
+     "AirPrint printer spam / printer impersonation"),
     (r"^nrf24_hw_(jammer|flood|tx|rx_start_promiscuous)\w*$", "nRF24 jamming / injection"),
     (r"^nrf24_(jam|mj)_\w+$|^nrf24_app_scene_(jam|mj)\w*$", "nRF24 jammer / MouseJack"),
     (r"^subbrute_\w+$|^subghz_scene_bf_\w+$", "Sub-GHz code brute-forcer"),
@@ -59,12 +61,20 @@ DENY_SYMBOLS = [
 ]
 
 # Files inside an excluded app's directory that other, kept apps compile.
-# Each one was read: GUI-only views, an HTTP file manager and an SMB client.
+# Each one was read; the comment says what it is.
 ALLOWED_SHARED_SOURCES = {
     "applications/main/wlan_app/views/wlan_lan_view.c",   # list view used by Streaming
     "applications/main/wlan_app/views/wlan_view_common.c",  # its drawing helpers
     "applications/main/wlan_app/wlan_webfs.c",  # SD file server engine, used by WiFi Lab
     "applications/main/wlan_app/wlan_smb.c",    # SMB client (libsmb2 wrapper), used by WiFi Lab
+    "applications/main/wlan_app/wlan_netscan.c",  # ARP lookup of the joined /24 + NetBIOS names
+    "applications/main/wlan_app/wlan_androidtv.c",  # Android TV Remote v2 client (PIN pairing)
+    "applications/main/wlan_app/views/wlan_androidtv_remote_view.c",  # its button grid
+    "applications/main/wlan_app/wlan_airprint.c",  # IPP receiver; spam/clone/capture entry points
+                                                   # are denied below (DENY_SYMBOLS)
+    "applications/main/wlan_app/wlan_pcap.c",      # pcap file writer
+    "applications/main/wlan_app/wlan_pcap_rec.c",  # buffered writer behind the channel monitor
+    "applications/main/wlan_app/views/wlan_sniffer_view.c",  # counter screen of the monitor
 }
 
 SDKCONFIG_EXPECT = {

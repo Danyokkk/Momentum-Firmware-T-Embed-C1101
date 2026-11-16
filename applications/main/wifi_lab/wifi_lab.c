@@ -10,141 +10,17 @@
  *   - SD file server: manage the card from a browser, over your own network
  *     or a WPA2 hotspot, after an explicit confirmation
  *   - SMB browser: copy files from a share on your network to the SD card
+ *   - network tools (wifi_lab_tools.c): devices on the joined network, port
+ *     check, Android TV remote, AirPrint receiver, channel monitor
  *
  * What it deliberately does not do: inject frames, deauthenticate, capture
  * handshakes, spoof access points, or touch any client but this device.
  *
  * Replaces applications/main/wlan_app, which is not built in this fork.
  */
-#include <furi.h>
-#include <furi_hal.h>
-#include <gui/gui.h>
-#include <gui/view_dispatcher.h>
-#include <gui/scene_manager.h>
-#include <gui/modules/submenu.h>
-#include <gui/modules/widget.h>
-#include <gui/modules/dialog_ex.h>
-#include <gui/modules/text_input.h>
-#include <gui/modules/loading.h>
-#include <storage/storage.h>
-
-#include <wifi.h>
-#include <wlan_hal.h>
-#include <wlan_passwords.h>
-
-/* Engines from upstream's WiFi app, compiled into this one (application.fam). */
-#include <wlan_app/wlan_webfs.h>
-#include <wlan_app/wlan_smb.h>
+#include "wifi_lab_i.h"
 
 #define TAG "WifiLab"
-
-#define WIFI_LAB_MAX_APS            48
-#define WIFI_LAB_PASSWORD_MAX       64
-#define WIFI_LAB_CONNECT_TIMEOUT_MS 15000
-#define WIFI_LAB_EXPORT_DIR         EXT_PATH("apps_data/wifi_lab")
-
-typedef struct {
-    char ssid[33];
-    uint8_t bssid[6];
-    int8_t rssi;
-    uint8_t channel;
-    wifi_auth_mode_t authmode;
-} WifiLabAp;
-
-typedef enum {
-    WifiLabViewSubmenu,
-    WifiLabViewWidget,
-    WifiLabViewDialog,
-    WifiLabViewTextInput,
-    WifiLabViewLoading,
-} WifiLabView;
-
-typedef enum {
-    WifiLabSceneStart,
-    WifiLabSceneScan,
-    WifiLabSceneList,
-    WifiLabSceneDetail,
-    WifiLabSceneConfirmJoin,
-    WifiLabScenePassword,
-    WifiLabSceneConnecting,
-    WifiLabSceneSavePassword,
-    WifiLabSceneMessage,
-    WifiLabSceneStatus,
-    WifiLabSceneWebfsMenu,
-    WifiLabSceneWebfsConfirm,
-    WifiLabSceneWebfsRun,
-    WifiLabSceneSmbInput,
-    WifiLabSceneSmbConnect,
-    WifiLabSceneSmbBrowse,
-    WifiLabSceneSmbConfirm,
-    WifiLabSceneSmbDownload,
-    WifiLabSceneCount,
-} WifiLabScene;
-
-typedef enum {
-    WifiLabEventScanDone = 0x1000,
-    WifiLabEventJoinPressed,
-    WifiLabEventPasswordEntered,
-    WifiLabEventTextDone,
-    WifiLabEventStop,
-} WifiLabEvent;
-
-enum {
-    WifiLabStartScan,
-    WifiLabStartStatus,
-    WifiLabStartDisconnect,
-    WifiLabStartFileServer,
-    WifiLabStartSmb,
-};
-
-#define WIFI_LAB_LIST_SAVE 0xFFFFu
-
-typedef struct {
-    Gui* gui;
-    ViewDispatcher* view_dispatcher;
-    SceneManager* scene_manager;
-    Submenu* submenu;
-    Widget* widget;
-    DialogEx* dialog;
-    TextInput* text_input;
-    Loading* loading;
-
-    WifiLabAp aps[WIFI_LAB_MAX_APS];
-    uint16_t ap_count;
-    uint16_t selected;
-    bool scan_ok;
-
-    FuriThread* scan_thread;
-    volatile bool scan_cancel;
-
-    char password[WIFI_LAB_PASSWORD_MAX + 1];
-    bool password_typed; /* entered now, as opposed to read from the SD card */
-    uint32_t connect_started;
-
-    FuriString* message;
-    bool started_wifi; /* this app brought the radio up */
-    bool joined; /* a join succeeded: leave the radio to the WiFi service */
-
-    /* SD file server */
-    bool webfs_hotspot;
-    int webfs_clients;
-    char webfs_ssid[WLAN_WEBFS_SSID_MAX + 1];
-    char webfs_pw[WLAN_WEBFS_PW_MAX + 1];
-
-    /* SMB browser */
-    WlanSmb* smb; /* allocated on first use */
-    uint8_t smb_input;
-    bool smb_loading;
-    bool smb_download_done;
-    bool smb_dl_is_dir;
-    char smb_ip[16];
-    char smb_user[WLAN_SMB_USER_MAX];
-    char smb_pass[WLAN_SMB_PASS_MAX];
-    char smb_share[WLAN_SMB_SHARE_MAX];
-    char smb_path[WLAN_SMB_PATH_MAX];
-    char smb_dl_path[WLAN_SMB_PATH_MAX];
-    WlanSmbEntry smb_entry; /* scratch: too large for the app stack */
-} WifiLab;
 
 /* ------------------------------------------------------------- helpers --- */
 
@@ -175,14 +51,14 @@ static const char* wifi_lab_display_ssid(const WifiLabAp* ap) {
     return ap->ssid[0] ? ap->ssid : "(hidden)";
 }
 
-static bool wifi_lab_ensure_radio(WifiLab* app) {
+bool wifi_lab_ensure_radio(WifiLab* app) {
     if(wlan_hal_is_started()) return true;
     if(!wlan_hal_start()) return false;
     app->started_wifi = true;
     return true;
 }
 
-static void wifi_lab_show_message(WifiLab* app, const char* text) {
+void wifi_lab_show_message(WifiLab* app, const char* text) {
     furi_string_set(app->message, text);
     scene_manager_next_scene(app->scene_manager, WifiLabSceneMessage);
 }
@@ -287,12 +163,12 @@ static void wifi_lab_scan_join(WifiLab* app) {
 
 /* -------------------------------------------------------------- scenes --- */
 
-static void wifi_lab_submenu_callback(void* context, uint32_t index) {
+void wifi_lab_submenu_callback(void* context, uint32_t index) {
     WifiLab* app = context;
     view_dispatcher_send_custom_event(app->view_dispatcher, index);
 }
 
-static void wifi_lab_dialog_callback(DialogExResult result, void* context) {
+void wifi_lab_dialog_callback(DialogExResult result, void* context) {
     WifiLab* app = context;
     view_dispatcher_send_custom_event(app->view_dispatcher, result);
 }
@@ -312,12 +188,17 @@ static void wifi_lab_scene_start_on_enter(void* context) {
     submenu_add_item(
         app->submenu, "SD file server", WifiLabStartFileServer, wifi_lab_submenu_callback, app);
     submenu_add_item(app->submenu, "SMB browser", WifiLabStartSmb, wifi_lab_submenu_callback, app);
+    wifi_lab_tools_start_menu(app);
+    submenu_set_selected_item(
+        app->submenu, scene_manager_get_scene_state(app->scene_manager, WifiLabSceneStart));
     view_dispatcher_switch_to_view(app->view_dispatcher, WifiLabViewSubmenu);
 }
 
 static bool wifi_lab_scene_start_on_event(void* context, SceneManagerEvent event) {
     WifiLab* app = context;
     if(event.type != SceneManagerEventTypeCustom) return false;
+    scene_manager_set_scene_state(app->scene_manager, WifiLabSceneStart, event.event);
+    if(wifi_lab_tools_start_event(app, event.event)) return true;
     switch(event.event) {
     case WifiLabStartScan:
         scene_manager_next_scene(app->scene_manager, WifiLabSceneScan);
@@ -948,12 +829,12 @@ enum {
     WifiLabSmbInputPassword,
 };
 
-static void wifi_lab_text_callback(void* context) {
+void wifi_lab_text_callback(void* context) {
     WifiLab* app = context;
     view_dispatcher_send_custom_event(app->view_dispatcher, WifiLabEventTextDone);
 }
 
-static bool wifi_lab_smb_ip_valid(const char* text) {
+bool wifi_lab_ip_valid(const char* text) {
     unsigned a, b, c, d;
     char tail;
     return sscanf(text, "%u.%u.%u.%u%c", &a, &b, &c, &d, &tail) == 4 && a < 256 && b < 256 &&
@@ -992,7 +873,7 @@ static void wifi_lab_scene_smb_input_on_enter(void* context) {
 static bool wifi_lab_scene_smb_input_on_event(void* context, SceneManagerEvent event) {
     WifiLab* app = context;
     if(event.type == SceneManagerEventTypeCustom && event.event == WifiLabEventTextDone) {
-        if(app->smb_input == WifiLabSmbInputServer && !wifi_lab_smb_ip_valid(app->smb_ip)) {
+        if(app->smb_input == WifiLabSmbInputServer && !wifi_lab_ip_valid(app->smb_ip)) {
             wifi_lab_show_message(app, "Enter the server as an\nIP address, for example\n192.168.1.20");
         } else if(app->smb_input < WifiLabSmbInputPassword) {
             app->smb_input++;
@@ -1338,6 +1219,8 @@ static void (*const wifi_lab_on_enter[])(void*) = {
     [WifiLabSceneSmbBrowse] = wifi_lab_scene_smb_browse_on_enter,
     [WifiLabSceneSmbConfirm] = wifi_lab_scene_smb_confirm_on_enter,
     [WifiLabSceneSmbDownload] = wifi_lab_scene_smb_download_on_enter,
+#define WIFI_LAB_TOOL_ON_ENTER(id, name) [id] = wifi_lab_scene_##name##_on_enter,
+    WIFI_LAB_TOOL_SCENES(WIFI_LAB_TOOL_ON_ENTER)
 };
 
 static bool (*const wifi_lab_on_event[])(void*, SceneManagerEvent) = {
@@ -1359,6 +1242,8 @@ static bool (*const wifi_lab_on_event[])(void*, SceneManagerEvent) = {
     [WifiLabSceneSmbBrowse] = wifi_lab_scene_smb_browse_on_event,
     [WifiLabSceneSmbConfirm] = wifi_lab_scene_smb_confirm_on_event,
     [WifiLabSceneSmbDownload] = wifi_lab_scene_smb_download_on_event,
+#define WIFI_LAB_TOOL_ON_EVENT(id, name) [id] = wifi_lab_scene_##name##_on_event,
+    WIFI_LAB_TOOL_SCENES(WIFI_LAB_TOOL_ON_EVENT)
 };
 
 static void (*const wifi_lab_on_exit[])(void*) = {
@@ -1380,6 +1265,8 @@ static void (*const wifi_lab_on_exit[])(void*) = {
     [WifiLabSceneSmbBrowse] = wifi_lab_scene_smb_browse_on_exit,
     [WifiLabSceneSmbConfirm] = wifi_lab_scene_smb_confirm_on_exit,
     [WifiLabSceneSmbDownload] = wifi_lab_scene_smb_download_on_exit,
+#define WIFI_LAB_TOOL_ON_EXIT(id, name) [id] = wifi_lab_scene_##name##_on_exit,
+    WIFI_LAB_TOOL_SCENES(WIFI_LAB_TOOL_ON_EXIT)
 };
 
 static const SceneManagerHandlers wifi_lab_scene_handlers = {
@@ -1437,11 +1324,14 @@ int32_t wifi_lab_app(void* p) {
     view_dispatcher_add_view(
         app->view_dispatcher, WifiLabViewLoading, loading_get_view(app->loading));
 
+    wifi_lab_tools_alloc(app);
+
     scene_manager_next_scene(app->scene_manager, WifiLabSceneStart);
     view_dispatcher_run(app->view_dispatcher);
 
     wifi_lab_scan_join(app);
     if(wlan_webfs_is_running()) wlan_webfs_stop();
+    wifi_lab_tools_free(app);
     if(app->smb) {
         wlan_smb_disconnect(app->smb);
         wlan_smb_free(app->smb);

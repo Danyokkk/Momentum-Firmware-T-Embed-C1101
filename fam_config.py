@@ -48,10 +48,12 @@ APPS = [
     "hid_usb",  # USB Keyboard & Mouse remote (user-driven)
     "bad_usb",
     "subghz",
-    # "subghz_remote" bundles its own copy of helpers/txrx/subghz_txrx.c, which
-    # collides with the main Sub-GHz app's (duplicate symbols) when built into
-    # the image. It is a standalone FAP upstream. Left out until its txrx helper
-    # is deduplicated against the main app or it is packaged as a FAP.
+    # Sub-GHz Remote: maps Up/Down/Left/Right/OK to saved .sub files. Upstream
+    # it is a standalone FAP with its own copy of helpers/txrx/subghz_txrx.c;
+    # here that copy is not compiled (see its application.fam) and the app uses
+    # the "subghz" app's helper, so it needs "subghz" in the image and goes
+    # through the same region and rolling-code TX gating.
+    "subghz_remote",
     "cli_subghz",
     "cli_ir",  # IR CLI plugin: rx, tx, decode, universal (IR is not an attack vector)
     "subghz_load_dangerous_settings",
@@ -139,7 +141,7 @@ if _board in _boards_without_ir:
 # (see INFRARED_HAS_5V_SETTINGS in applications/main/infrared/infrared_app_i.h).
 
 if _board in _boards_without_subghz:
-    APPS = [a for a in APPS if a not in ("subghz", "cli_subghz", "subghz_load_dangerous_settings", "js_subghz")]
+    APPS = [a for a in APPS if a not in ("subghz", "subghz_remote", "cli_subghz", "subghz_load_dangerous_settings", "js_subghz")]
 
 if _board in _boards_without_nrf24:
     APPS = [a for a in APPS if a != "nrf24"]

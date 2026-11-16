@@ -4,15 +4,22 @@ App(
     apptype=FlipperAppType.MENUEXTERNAL,
     entry_point="wifi_lab_app",
     requires=["gui", "storage", "wifi"],
-    # The SD file server and the SMB client are upstream's engines. They live
-    # in the WiFi app's directory, which is not built in this fork, so the two
-    # files are compiled here. Both were read: an HTTP file manager and an SMB
-    # client, no frame injection or capture code
-    # (see tools/tembed_plus/check_lab_exclusions.py, ALLOWED_SHARED_SOURCES).
+    # The tools are front ends over upstream's engines. Those live in the WiFi
+    # app's directory, which is not built in this fork, so the listed files are
+    # compiled here (see tools/tembed_plus/check_lab_exclusions.py,
+    # ALLOWED_SHARED_SOURCES, for what each one is). wlan_view_common.c, which
+    # the sniffer view draws with, is already compiled by the Streaming app.
     sources=[
         "*.c*",
         "../wlan_app/wlan_webfs.c",
         "../wlan_app/wlan_smb.c",
+        "../wlan_app/wlan_netscan.c",
+        "../wlan_app/wlan_androidtv.c",
+        "../wlan_app/views/wlan_androidtv_remote_view.c",
+        "../wlan_app/wlan_airprint.c",
+        "../wlan_app/wlan_pcap.c",
+        "../wlan_app/wlan_pcap_rec.c",
+        "../wlan_app/views/wlan_sniffer_view.c",
     ],
     stack_size=8 * 1024,
     icon="A_Sub1ghz_14",

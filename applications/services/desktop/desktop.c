@@ -858,6 +858,32 @@ void desktop_api_set_settings(Desktop* instance, const DesktopSettings* settings
  * Application thread
  */
 
+/* Boot intro of the T-Embed CC1101 Plus build: one screen, shown once per
+ * power-up before the desktop appears. */
+#define DESKTOP_BOOT_INTRO_MS 1800
+
+static void desktop_boot_intro_draw(Canvas* canvas, void* context) {
+    UNUSED(context);
+    canvas_clear(canvas);
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str_aligned(canvas, 64, 14, AlignCenter, AlignCenter, "T-Embed CC1101 Plus");
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str_aligned(canvas, 64, 28, AlignCenter, AlignCenter, "lab firmware");
+    canvas_draw_line(canvas, 24, 38, 104, 38);
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str_aligned(canvas, 64, 50, AlignCenter, AlignCenter, "made by daan1k");
+}
+
+static void desktop_boot_intro(Gui* gui) {
+    ViewPort* view_port = view_port_alloc();
+    view_port_draw_callback_set(view_port, desktop_boot_intro_draw, NULL);
+    gui_add_view_port(gui, view_port, GuiLayerFullscreen);
+    view_port_update(view_port);
+    furi_delay_ms(DESKTOP_BOOT_INTRO_MS);
+    gui_remove_view_port(gui, view_port);
+    view_port_free(view_port);
+}
+
 int32_t desktop_srv(void* p) {
     UNUSED(p);
 
@@ -869,6 +895,8 @@ int32_t desktop_srv(void* p) {
     }
 
     Desktop* desktop = desktop_alloc();
+
+    desktop_boot_intro(desktop->gui);
 
     desktop_init_settings(desktop);
 

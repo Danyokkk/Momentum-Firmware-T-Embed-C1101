@@ -68,7 +68,7 @@ Hardware: CC1101 on SPI2 (CS 12, GDO0 3, GDO2 38), band switch GPIO47/48.
 | Radio Settings: external module, GPS baud, debug pin | no external module on this port; debug pin only in debug mode | n/a / present | build |
 | Static/hopper frequency lists (Momentum app > Protocols) | port uses its `subghz/assets` setting files | present (file-based) | build |
 | GPS "Subdriving" (location stamped on captures) | no; GPIO43/44 are the nRF24's on a Plus | add-on (and conflicts with the Plus module) | — |
-| Sub-GHz Remote (map saved signals to buttons) | source present; bundles its own `helpers/txrx/subghz_txrx.c`, which duplicates the main app's symbols when built in-image | todo (needs txrx dedup or FAP packaging) | — |
+| Sub-GHz Remote (map saved signals to buttons) | built in-image; its bundled `helpers/txrx/subghz_txrx.c` is not compiled and the app links the Sub-GHz app's helper (same TX gating) | added | build |
 | Playlist | yes (port feature) | present | build |
 | Jammer (port feature, not Momentum) | removed | withheld | image |
 | Bruteforce (port feature; external app in Momentum/Unleashed) | removed | withheld | image |
@@ -178,6 +178,10 @@ Momentum firmware has no Wi-Fi; it relies on external ESP boards and apps
 | Scan export to SD | WiFi Lab, on request | added | build |
 | SD file server in a browser (upstream port feature, not in Momentum) | WiFi Lab, with confirmation | added | build |
 | SMB share browser and download (upstream port feature, not in Momentum) | WiFi Lab | added | build |
+| Devices on network, port check (upstream port feature) | WiFi Lab, with confirmation | added | build |
+| Android TV remote (upstream port feature) | WiFi Lab | added | build |
+| AirPrint receiver (upstream port feature) | WiFi Lab, receiver only | added | build |
+| Channel monitor with header-only `.pcap` (replaces upstream's sniffer) | WiFi Lab | added | build |
 | Marauder / GhostESP / Blackhat companions | not shipped | withheld | — |
 | Wardriver with third-party upload | not shipped | withheld | — |
 | Deauth, beacon spam, evil portal, handshake capture, WPS attacks, MITM | removed | withheld | image |

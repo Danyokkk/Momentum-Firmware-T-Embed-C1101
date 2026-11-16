@@ -34,6 +34,7 @@ ships it and it still compiles", not "it works".
 
 | Feature | Status | Evidence | Notes | Acceptance check on hardware |
 | --- | --- | --- | --- | --- |
+| Boot intro: "T-Embed CC1101 Plus lab firmware, made by daan1k", 1.8 s before the desktop | new | build | `desktop_boot_intro()` in `applications/services/desktop/desktop.c` | shows once per power-up |
 | Boot to desktop, encoder navigation, side key = back | built | build | unchanged from upstream | cold boot 10× from battery; no boot loop; menu reachable |
 | Display (ST7789 320×170) | built | build | reset-pin question in `BOARD_PROFILE.md` | full-screen pattern, no offset or tearing |
 | SD card, archive browser | built | build | shared SPI with radios; Plus SD-recovery option is off | mount SanDisk ≤ 32 GB; browse, create, delete; survive 20 Sub-GHz RX sessions |
@@ -56,6 +57,7 @@ ships it and it still compiles", not "it works".
 
 | Feature | Status | Evidence | Notes | Acceptance check on hardware |
 | --- | --- | --- | --- | --- |
+| **Sub-GHz Remote**: map Up/Down/Left/Right/OK to saved `.sub` files | built (was not built) | build | upstream's bundled copy of the TX/RX helper is not compiled; the app uses the Sub-GHz app's helper, so the same region gate and rolling-code refusal apply. A file that may not be sent shows as a failed send (red blink) | build a remote from two static-code files you own; each button sends its file |
 | Read, Read RAW, saved-signal browser, frequency analyzer, RF spectrum | built | build | | receive a known 433.92 MHz remote you own; save; reload |
 | 58 protocol entries already in upstream's registry (remotes, sensors, RAW, BinRAW) | built | build | includes rolling-code families | decode at least one static and one sensor protocol |
 | TPMS decoders (Schrader, Ford, Renault, Citroën, PMV-107J) | built | build | receive-side | — |
@@ -117,7 +119,12 @@ ships it and it still compiles", not "it works".
 | Evil portal, captive DNS, credential capture, MITM, ARP block, code injection | excluded | image check | | — |
 | Handshake / PMKID capture, WPS PIN attacks | excluded | image check | | — |
 | Printer hijack, client-isolation probe | excluded | image check | | — |
-| Port scanner, Android TV remote, AirPrint receiver, packet sniffer | not built | — | benign or dual-use parts of the removed app; candidates to re-add individually with confirmation prompts | — |
+| **Devices on network** (WiFi Lab): ARP lookup of the joined /24, NetBIOS names | new (upstream engine, new front end) | build | upstream's `wlan_netscan.c`. Only on the network the device has joined, after a confirmation. Picking a device offers Port check, Android TV remote, SMB browser | list matches the router's client list |
+| **Port check** (WiFi Lab): 19 common TCP ports of one chosen host | new | build | plain connect, 500 ms per port, one host at a time (typed address or picked from the device list). No banner grabbing, no sweep across hosts | against a PC with a known open port |
+| **Android TV remote** (WiFi Lab) | new (upstream engine and button view, new scenes) | build | upstream's `wlan_androidtv.c`: Android TV Remote v2. First use needs the PIN the TV shows on its own screen. Client certificate is stored in `/ext/wifi/androidtv` | pair with a TV, navigate, volume |
+| **AirPrint receiver** (WiFi Lab) | new (upstream engine, new scene) | build; image check (spam/clone/capture entry points absent) | upstream's `wlan_airprint.c`, plain receiver only: appears as a printer on the joined network and saves what is printed to `/ext/wifi/printer`. Asks before starting, stops on Back | print one page from a phone; file appears on the card |
+| **Channel monitor** (WiFi Lab): frame counter for one channel, `.pcap` for Wireshark | new (upstream recorder and counter view, new capture filter) | build | management frames are stored whole; **data frames are cut to their 802.11 header**, so no payloads and no EAPOL key frames reach the card (handshake capture stays excluded). Leaves the joined network while it runs. Files in `apps_data/wifi_lab/monitor/` | open a capture in Wireshark: beacons complete, data frames header-only |
+| Upstream's packet sniffer with full payloads and per-client targeting | excluded | — | it records WPA handshakes as a side effect; the channel monitor above replaces it | — |
 | 5 GHz Wi-Fi | unsupported | — | ESP32-S3 is 2.4 GHz only | — |
 
 ## Bluetooth LE
@@ -135,6 +142,11 @@ ships it and it still compiles", not "it works".
 | --- | --- | --- | --- |
 | Buddy link | excluded (disabled) | image check | `esp_now_init` is not linked. As audited: no encryption, no authentication, no replay protection, auto-accept pairing, and a buddy runs feature commands from any sender |
 | Authenticated, encrypted, replay-protected link with explicit pairing and reset | needs porting | — | prerequisite for turning it back on |
+
+Reviewed again on 2026-11-16 and left out: besides "identify" (blink a paired
+board), the only thing the buddy link does is offload WPA handshake capture to
+the buddy boards, which is in the excluded set. Without that there is no
+feature left for the link to carry.
 
 ## USB / HID
 
@@ -192,9 +204,10 @@ The follow-up brief settled what the first pass had left open:
   parser; the rest of the tree relies on upstream's own suites.
 - Battery life, run-time free heap, task stacks and SD throughput are unmeasured
   (they need a device). Static RAM is measured from the linker map
-  (2026-11-16, after merging upstream `e6ec1197`): 200,023 of 341,760 bytes of
-  internal D/IRAM used, 141,737 free before the heap starts (the SD file
-  server and SMB client added 720 bytes of that). The 37 decoders
+  (2026-11-16, after merging upstream `e6ec1197`): 205,699 of 341,760 bytes of
+  internal D/IRAM used, 136,061 free before the heap starts (the WiFi Lab
+  tools and Sub-GHz Remote added about 6.4 KB of that; their working buffers
+  are allocated only while a tool is open, mostly in PSRAM). The 37 decoders
   this fork added put 4 bytes in static RAM (code and tables are in flash) and
   about 3.4 KB plus allocator overhead on the heap while a Sub-GHz receiver
   exists (upstream's own 63 decoders: 6.9 KB). The BLE Lab device table

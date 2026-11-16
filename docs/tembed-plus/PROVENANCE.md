@@ -127,6 +127,15 @@ them (`sources=` in `applications/main/wifi_lab/application.fam`):
 | --- | --- | --- |
 | `applications/main/wlan_app/wlan_webfs.{c,h}` | HTTP file manager for the SD card (hotspot or existing connection) | upstream port, unmodified |
 | `applications/main/wlan_app/wlan_smb.{c,h}` | SMB2/3 client wrapper over `components/libsmb2` | upstream port, unmodified |
+| `applications/main/wlan_app/wlan_netscan.{c,h}` | ARP lookup of the joined /24, NetBIOS name query | upstream port, unmodified |
+| `applications/main/wlan_app/wlan_androidtv.{c,h}`, `views/wlan_androidtv_remote_view.{c,h}` | Android TV Remote v2 client and its button grid | upstream port, unmodified |
+| `applications/main/wlan_app/wlan_airprint.{c,h}` | IPP/AirPrint receiver. Only `wlan_airprint_start/stop` and the getters are called; the spam, clone and capture entry points are unreferenced, removed by the linker and denied by `check_lab_exclusions.py` | upstream port, unmodified |
+| `applications/main/wlan_app/wlan_pcap.{c,h}`, `wlan_pcap_rec.{c,h}`, `views/wlan_sniffer_view.{c,h}` | pcap writer, buffered recorder, counter screen | upstream port, unmodified |
+
+The scenes in `applications/main/wifi_lab/wifi_lab_tools.c` are new. The port
+check and the channel monitor's capture callback are written for this fork
+(the monitor truncates data frames to the 802.11 header; upstream's sniffer
+stores them whole).
 
 Upstream's own scenes for these features are not used: they depend on the
 excluded WiFi app (its LAN host sweep feeds the SMB server list). The lab

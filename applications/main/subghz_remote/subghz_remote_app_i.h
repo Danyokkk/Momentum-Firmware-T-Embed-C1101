@@ -4,7 +4,7 @@
 #include "helpers/subrem_presets.h"
 #include "scenes/subrem_scene.h"
 
-#include "helpers/txrx/subghz_txrx.h"
+#include "../subghz/helpers/subghz_txrx.h"
 
 #include "subghz_remote_icons.h"
 
