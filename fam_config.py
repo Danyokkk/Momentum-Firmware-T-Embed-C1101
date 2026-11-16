@@ -53,6 +53,7 @@ APPS = [
     # the image. It is a standalone FAP upstream. Left out until its txrx helper
     # is deduplicated against the main app or it is packaged as a FAP.
     "cli_subghz",
+    "cli_ir",  # IR CLI plugin: rx, tx, decode, universal (IR is not an attack vector)
     "subghz_load_dangerous_settings",
     "passport",
     "nfc",

@@ -125,7 +125,7 @@ Hardware: IR LED on GPIO2, receiver on GPIO1 (RMT).
 | Universal Remotes: Load from Library File | added: the `from_file` scene lets you pick any `.ir` library and sends its buttons from a menu. Needed three functions added to the port's IR engine (`calculate_messages_ex`, `get_button_count`, `get_button_name`); the existing universal remotes' path is unchanged (`calculate_messages` now calls `..._ex(false, false)`) | added | build |
 | Easy-learn (preset button names) | no | todo | — |
 | GPIO settings (external IR module) | "Infrared Settings" exists; the external pin is GPIO43, which the Plus nRF24 uses | n/a on a Plus | — |
-| IR CLI | not built | todo | — |
+| IR CLI | built: the `cli_ir` plugin (commands `ir rx`, `ir tx`, `ir decode`, `ir universal`) is enabled in `fam_config.py APPS`, the same way as the Sub-GHz CLI. IR is not an attack vector | added | build |
 | JS `infrared` module | yes | present | build |
 
 ## 4. 125 kHz RFID and iButton
@@ -280,7 +280,7 @@ such as "present / todo" counts once, under "present"):
 
 | present | added | todo | add-on | n/a | withheld |
 | --- | --- | --- | --- | --- | --- |
-| 48 | 25 | 24 | 5 | 11 | 38 |
+| 48 | 26 | 23 | 5 | 11 | 38 |
 
 The "todo" column is the remaining work towards parity. The largest remaining
 items: Clock & Alarm settings (needs an RTC-alarm HAL), archive search and
