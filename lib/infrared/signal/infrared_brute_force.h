@@ -55,6 +55,25 @@ void infrared_brute_force_set_db_filename(InfraredBruteForce* brute_force, const
 InfraredErrorCode infrared_brute_force_calculate_messages(InfraredBruteForce* brute_force);
 
 /**
+ * @brief As infrared_brute_force_calculate_messages(), with control over unknown
+ * button names. With auto_detect_buttons, records are created on the fly for
+ * names not pre-registered with add_record() (used by "Load from File"). With
+ * ignore_unknown_buttons, such names are skipped. With neither, an unknown name
+ * is a fatal error, as before.
+ */
+InfraredErrorCode infrared_brute_force_calculate_messages_ex(
+    InfraredBruteForce* brute_force,
+    bool auto_detect_buttons,
+    bool ignore_unknown_buttons);
+
+/** @brief Number of button records in the dictionary. */
+size_t infrared_brute_force_get_button_count(const InfraredBruteForce* brute_force);
+
+/** @brief Name of the button whose stored index is @p index, or NULL. */
+const char*
+    infrared_brute_force_get_button_name(const InfraredBruteForce* brute_force, size_t index);
+
+/**
  * @brief Start transmitting signals from a category stored in the dictionary.
  *
  * The function locates the category identified by @p index, reports the number of

@@ -120,7 +120,7 @@ Hardware: IR LED on GPIO2, receiver on GPIO1 (RMT).
 | 14 protocol variants in 8 families | identical set | present | build |
 | Universal Remotes: TVs, Audio, Projectors, LEDs, Fans, ACs | yes (6 libraries) | present | build |
 | Universal Remotes: Blu-ray/DVD, Monitors, Digital Signs | added: three scenes + three `.ir` libraries from Momentum, wired into the Universal menu. The 25 button icons they need were generated from Momentum's PNGs with the port's own `compile_icons.py` and appended to `components/assets/assets_icons.{c,h}` | added | build (scenes, icons and `.ir` assets verified in the image) |
-| Universal Remotes: Load from Library File | no; needs the `from_file` scene and a file-browser hook | todo | — |
+| Universal Remotes: Load from Library File | added: the `from_file` scene lets you pick any `.ir` library and sends its buttons from a menu. Needed three functions added to the port's IR engine (`calculate_messages_ex`, `get_button_count`, `get_button_name`); the existing universal remotes' path is unchanged (`calculate_messages` now calls `..._ex(false, false)`) | added | build |
 | Easy-learn (preset button names) | no | todo | — |
 | GPIO settings (external IR module) | "Infrared Settings" exists; the external pin is GPIO43, which the Plus nRF24 uses | n/a on a Plus | — |
 | IR CLI | not built | todo | — |
@@ -278,7 +278,7 @@ such as "present / todo" counts once, under "present"):
 
 | present | added | todo | add-on | n/a | withheld |
 | --- | --- | --- | --- | --- | --- |
-| 47 | 22 | 26 | 5 | 11 | 38 |
+| 47 | 23 | 25 | 5 | 11 | 38 |
 
 The "todo" column is the remaining work towards parity. The largest remaining
 items: Clock & Alarm settings (needs an RTC-alarm HAL), archive search and

@@ -87,7 +87,10 @@ void infrared_brute_force_set_db_filename(InfraredBruteForce* brute_force, const
     brute_force->db_filename = db_filename;
 }
 
-InfraredErrorCode infrared_brute_force_calculate_messages(InfraredBruteForce* brute_force) {
+InfraredErrorCode infrared_brute_force_calculate_messages_ex(
+    InfraredBruteForce* brute_force,
+    bool auto_detect_buttons,
+    bool ignore_unknown_buttons) {
     furi_check(brute_force);
     furi_assert(!brute_force->is_started);
     furi_assert(brute_force->db_filename);
@@ -105,6 +108,7 @@ InfraredErrorCode infrared_brute_force_calculate_messages(InfraredBruteForce* br
         }
 
         bool signal_valid = false;
+        uint32_t auto_detect_button_index = 0;
         while(infrared_signal_read_name(ff, signal_name) == InfraredErrorCodeNone) {
             size_t signal_start = flipper_format_tell(ff);
             error = infrared_signal_read_body(signal, ff);
@@ -113,6 +117,17 @@ InfraredErrorCode infrared_brute_force_calculate_messages(InfraredBruteForce* br
 
             InfraredBruteForceRecord* record =
                 InfraredBruteForceRecordDict_get(brute_force->records, signal_name);
+            if(!record) {
+                /* Button name not pre-registered. For "Load from File" (auto_detect)
+                 * create a record on the fly; otherwise keep the original behaviour. */
+                if(auto_detect_buttons) {
+                    infrared_brute_force_add_record(
+                        brute_force, auto_detect_button_index++, furi_string_get_cstr(signal_name));
+                    record = InfraredBruteForceRecordDict_get(brute_force->records, signal_name);
+                } else if(ignore_unknown_buttons) {
+                    continue;
+                }
+            }
             furi_assert(record);
             SignalPositionArray_push_back(record->signals, signal_start);
         }
@@ -125,6 +140,35 @@ InfraredErrorCode infrared_brute_force_calculate_messages(InfraredBruteForce* br
     flipper_format_free(ff);
     furi_record_close(RECORD_STORAGE);
     return error;
+}
+
+InfraredErrorCode infrared_brute_force_calculate_messages(InfraredBruteForce* brute_force) {
+    return infrared_brute_force_calculate_messages_ex(brute_force, false, false);
+}
+
+size_t infrared_brute_force_get_button_count(const InfraredBruteForce* brute_force) {
+    furi_check(brute_force);
+    return InfraredBruteForceRecordDict_size(brute_force->records);
+}
+
+const char*
+    infrared_brute_force_get_button_name(const InfraredBruteForce* brute_force, size_t index) {
+    furi_check(brute_force);
+    if(index >= infrared_brute_force_get_button_count(brute_force)) {
+        return NULL;
+    }
+    /* Records are stored in a dict; the insertion index lives in the value, so
+     * find the record whose stored index matches (iteration order is unstable). */
+    InfraredBruteForceRecordDict_it_t it;
+    for(InfraredBruteForceRecordDict_it(it, brute_force->records);
+        !InfraredBruteForceRecordDict_end_p(it);
+        InfraredBruteForceRecordDict_next(it)) {
+        const InfraredBruteForceRecordDict_itref_t* pair = InfraredBruteForceRecordDict_cref(it);
+        if(pair->value.index == index) {
+            return furi_string_get_cstr(pair->key);
+        }
+    }
+    return NULL;
 }
 
 bool infrared_brute_force_start(

@@ -166,7 +166,7 @@ a later host test. Prastel was left out: it needs Unleashed's `public_api.h`.
 | Source | Momentum `d3f89df`: `applications/main/infrared/scenes/infrared_scene_universal_{bluray,monitor,digital_sign}.c`, the `.ir` libraries `resources/infrared/assets/{bluray_dvd,monitor,digital_sign}.ir`, and 25 button icons from `assets/icons/Infrared/*.png` |
 | Destination | the same scene and asset paths here; the scenes are wired into `infrared_scene_config.h` and the Universal menu (`infrared_scene_universal.c`) |
 | Icons | the 25 PNGs the new scenes need and the global set lacked were converted with this port's own `tools/fam/compile_icons.py` (Pillow) and appended to `components/assets/assets_icons.{c,h}` between `BEGIN/END tembed-plus IR universal-remote icons` markers. They use the uncompressed icon format (first byte `0x00`), which the renderer supports, so they are slightly larger than the heatshrink-compressed originals |
-| Not ported | the `from_file` scene (load a custom `.ir` universal library) needs a file-browser hook; still todo |
+| Also ported | the `from_file` scene (load a custom `.ir` universal library). It needed three functions added to the port's IR engine (`lib/infrared/signal/infrared_brute_force.{c,h}`): `calculate_messages_ex` (auto-create records for unknown button names), `get_button_count` and `get_button_name`, ported from Momentum's engine (same `InfraredBruteForceRecordDict` structure). `calculate_messages` now delegates to `calculate_messages_ex(false, false)`, preserving the existing remotes' behaviour exactly |
 
 ### 7. Web flasher and CI
 
