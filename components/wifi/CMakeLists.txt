@@ -4,14 +4,12 @@ idf_component_register(
         "wlan_passwords.c"
         "wifi_settings.c"
         "wifi_service.c"
-        # wifite/{core,pixie,radio,link}.c (WPS Pixie Dust / online PIN attack
-        # engine) are not built: this fork only has the lab profile. They also
-        # need the modified esp_wps.c that cmake/wifite_sdk_adapter.cmake swapped
-        # into the SDK, which the top-level CMakeLists.txt no longer does.
+        "wifite/core.c"
+        "wifite/pixie.c"
+        "wifite/radio.c"
+        "wifite/link.c"
     INCLUDE_DIRS "."
-    # No PRIV_INCLUDE_DIRS into the SDK's wpa_supplicant internals: only the
-    # removed WPS attack engine needed them, and splicing a Windows $ENV{IDF_PATH}
-    # ("C:\Espressif...") into this list broke configuration on Windows.
+    PRIV_REQUIRES wpa_supplicant
     REQUIRES
         furi
         furi_hal
@@ -24,6 +22,11 @@ idf_component_register(
         esp_event
         lwip
         mbedtls
-        wpa_supplicant
         notification
+)
+
+idf_component_get_property(_wps_dir wpa_supplicant COMPONENT_DIR)
+target_include_directories(${COMPONENT_LIB} PRIVATE
+    "${_wps_dir}/src"
+    "${_wps_dir}/esp_supplicant/src"
 )

@@ -90,15 +90,6 @@ set(FLIPPER_PROFILE "full" CACHE STRING "Build profile label")
 set(ENV{FLIPPER_PROFILE} "${FLIPPER_PROFILE}")
 
 # ---------------------------------------------------------------------------
-# Upstream patched $IDF_PATH/components/esp_wifi/lib/esp32s3/libnet80211.a in
-# place here (tools/patch_wifi_lib.py) so the Wi-Fi blob would transmit raw
-# deauth/disassoc frames. That rewrote the developer's ESP-IDF installation for
-# every project using it and is the enabling step for the deauth features, so
-# this fork does not do it. tools/tembed_plus/check_idf_pristine.py confirms the
-# installed blob still matches Espressif's release.
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
 # App-Descriptor-Version (esp_app_desc_t.version) aus der zentralen Port-Version
 # in components/toolbox/fw_version.h. Damit traegt jede furi_esp32.bin ihre
 # Versionsnummer im Image-Header (Offset 0x30) — qT-Embed liest sie vor dem
@@ -137,5 +128,7 @@ if(DEFINED FLIPPER_DEPENDENCIES_LOCK)
     idf_build_set_property(DEPENDENCIES_LOCK "${FLIPPER_DEPENDENCIES_LOCK}")
 endif()
 project(furi_esp32)
-# cmake/wifite_sdk_adapter.cmake (swaps the SDK's esp_wps.c for a modified copy
-# used by the WPS PIN attack engine) is intentionally not included.
+# Keep all SDK adaptations in the build tree; the installed ESP-IDF checkout is
+# used as a read-only source for the pinned Wi-Fi libraries and WPS source.
+include(${CMAKE_SOURCE_DIR}/cmake/wifite_sdk_adapter.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/wifi_blob_adapter.cmake)

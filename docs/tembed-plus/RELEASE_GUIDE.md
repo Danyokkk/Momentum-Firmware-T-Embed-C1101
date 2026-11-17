@@ -62,10 +62,9 @@ python tools/tembed_plus/build.py doctor
 python tools/tembed_plus/build.py build
 ```
 
-`doctor` checks the SDK version and that Espressif's Wi-Fi library is
-unmodified. Upstream's build used to patch that library inside the SDK; if you
-ever built upstream with this SDK, `doctor` fails and tells you how to restore
-it. `build` configures and compiles the full app/source profile. It also fails if
+`doctor` checks the ESP-IDF version. The build generates the WPS adapter and a
+patched Wi-Fi library under the build directory; it leaves the installed SDK
+unchanged. `build` configures and compiles the full app/source profile. It also fails if
 `dependencies.lock` changed during the build: ESP-IDF's component manager
 rewrites that file when it re-resolves components (it does so if a board with
 a different chip is built from the same folder with upstream's scripts), and an

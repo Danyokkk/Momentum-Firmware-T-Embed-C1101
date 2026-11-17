@@ -13,7 +13,7 @@ Chrome, Edge or Opera on a computer. The page backs the device up first, checks 
 
 - **Features:** Sub-GHz receive, decode and transmit; NFC read/write/emulation; infrared; Wi-Fi and BLE apps; nRF24 features; HID and BadUSB; JavaScript apps; and the other built-in apps supported by the selected board. Hardware, SDK, and board support still determine which features work on a given target.
 - **Build:** GitHub Actions builds from this repository with pinned ESP-IDF v5.4.1. The firmware build no longer filters apps or source files or runs a feature deny-list check. Each release artifact can be verified with `gh attestation verify furi_esp32.bin --repo Danyokkk/Momentum-Firmware-T-Embed-C1101`.
-- **Wi-Fi SDK note:** the build keeps Espressif's SDK files unchanged. The optional WPS attack engine is not wired into this fork's Wi-Fi component, and raw deauthentication support depends on the exact ESP-IDF Wi-Fi blob; the stock blob may reject those frames.
+- **Wi-Fi SDK note:** the WPS adapter and raw-management-frame adjustment are applied to build-local copies of Espressif's SDK files. The installed ESP-IDF checkout is left unchanged.
 - **Docs:** [report](docs/tembed-plus/REPORT.md) &middot; [feature matrix](docs/tembed-plus/FEATURE_MATRIX.md) &middot; [Momentum parity](docs/tembed-plus/MOMENTUM_PARITY.md) &middot; [release guide](docs/tembed-plus/RELEASE_GUIDE.md) (flashing, recovery, RF rules) &middot; [provenance and licences](docs/tembed-plus/PROVENANCE.md)
 - **Releases:** pushing a tag such as `v0.1.0` makes Actions publish a GitHub release and add it to the web flasher.
 

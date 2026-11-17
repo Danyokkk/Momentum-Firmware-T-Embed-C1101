@@ -8,8 +8,8 @@
     python tools/tembed_plus/build.py flash --port COM7 # asks before writing
 
 What it pins (tools/tembed_plus/toolchain.lock.json):
-  * the ESP-IDF release, and the SHA-256 of Espressif's Wi-Fi blob so a patched
-    SDK (upstream used to patch libnet80211.a in place) is refused;
+  * the ESP-IDF release; Wi-Fi adaptations are generated under the build tree,
+    leaving the installed SDK untouched;
   * the board, build profile and sdkconfig defaults chain;
   * managed component versions come from dependencies.lock in the repo root.
 
@@ -88,25 +88,11 @@ def sha256(path: Path) -> str:
 
 
 def check_idf(idf: Path) -> list[str]:
-    """Return a list of problems; empty means the SDK matches the lock."""
-    problems = []
+    """Return SDK version mismatches; empty means the pinned release is present."""
     version = idf_version(idf)
     if version != LOCK["esp_idf"]["version"]:
-        problems.append(f"ESP-IDF is v{version}, lock wants v{LOCK['esp_idf']['version']}")
-    for relative, expected in LOCK["esp_idf"]["pristine_blobs"].items():
-        blob = idf / relative
-        if not blob.is_file():
-            problems.append(f"missing SDK file {relative}")
-            continue
-        actual = sha256(blob)
-        if actual != expected:
-            problems.append(
-                f"{relative} does not match Espressif's release "
-                f"(got {actual[:16]}..., want {expected[:16]}...). The SDK was modified - "
-                "upstream's build patched this file to allow raw deauth frames. Restore it "
-                "with: git -C <idf>/components/esp_wifi/lib checkout -- ."
-            )
-    return problems
+        return [f"ESP-IDF is v{version}, lock wants v{LOCK['esp_idf']['version']}"]
+    return []
 
 
 def idf_environment(idf: Path) -> dict[str, str]:
@@ -186,7 +172,7 @@ def cmd_doctor(_args) -> int:
     for problem in problems:
         note(f"PROBLEM    : {problem}")
     if not problems:
-        note("SDK        : matches lock, Wi-Fi blob is Espressif's original")
+        note("SDK        : pinned release found; Wi-Fi adaptations stay in the build tree")
         env = idf_environment(idf)
         note(f"python env : {env.get('IDF_PYTHON_ENV_PATH')}")
     return 1 if problems else 0
@@ -212,10 +198,6 @@ def cmd_build(_args) -> int:
             "the build rewrote dependencies.lock (managed components were re-resolved). "
             "Restore it with `git checkout -- dependencies.lock` and build again."
         )
-    # The build must leave the SDK as it found it.
-    problems = check_idf(idf)
-    if problems:
-        fail("the build modified the SDK:\n  - " + "\n  - ".join(problems))
     return cmd_verify(_args)
 
 

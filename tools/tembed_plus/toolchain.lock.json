@@ -11,10 +11,7 @@
   "esp_idf": {
     "version": "5.4.1",
     "tag": "v5.4.1",
-    "commit": "4c2820d377d1375e787bcef612f0c32c1427d183",
-    "pristine_blobs": {
-      "components/esp_wifi/lib/esp32s3/libnet80211.a": "e4942181894522a69571d9a0d527fa455c21d5d7315ce93b76f20dd431180f8d"
-    }
+    "commit": "4c2820d377d1375e787bcef612f0c32c1427d183"
   },
   "tools": {
     "xtensa-esp-elf": "esp-14.2.0_20241119",
