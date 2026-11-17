@@ -1,8 +1,4 @@
-/* ADD_SCENE_GATED marks scenes that only exist outside the lab profile:
- * writing, emulation, cloning, unlocking and key recovery. Scene ids stay the
- * same in every build. In the lab profile nfc_scene.c points their handlers at
- * the shared "not in this build" scene (nfc_scene_lab_blocked.c) and their
- * source files are not compiled (fam_config.py, LAB_EXCLUDED_SOURCES). */
+/* ADD_SCENE_GATED marks scenes whose implementations are listed below. */
 #ifndef ADD_SCENE_GATED
 #define ADD_SCENE_GATED(prefix, name, id) ADD_SCENE(prefix, name, id)
 #define NFC_SCENE_GATED_IS_DEFAULT

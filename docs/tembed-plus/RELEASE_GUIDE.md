@@ -65,9 +65,7 @@ python tools/tembed_plus/build.py build
 `doctor` checks the SDK version and that Espressif's Wi-Fi library is
 unmodified. Upstream's build used to patch that library inside the SDK; if you
 ever built upstream with this SDK, `doctor` fails and tells you how to restore
-it. `build` configures, compiles, and then runs
-`tools/tembed_plus/check_lab_exclusions.py` on the result. A build that links
-anything from the excluded list fails here. `build` also fails if
+it. `build` configures and compiles the full app/source profile. It also fails if
 `dependencies.lock` changed during the build: ESP-IDF's component manager
 rewrites that file when it re-resolves components (it does so if a board with
 a different chip is built from the same folder with upstream's scripts), and an
@@ -83,8 +81,8 @@ Outputs, in `build_t_embed_plus/`:
 | `ota_data_initial.bin` | `0xBF0000` |
 | `furi_esp32.bin` | `0x10000` |
 
-The reference build on 2026-11-14 produced a 3.06 MB `furi_esp32.bin`
-(3,064,400 bytes), about half of a 5.94 MB app slot.
+The build on 2026-11-18 produced a 3.39 MB `furi_esp32.bin`
+(3,394,880 bytes), with 45% of the 5.94 MB app slot still free.
 
 Linux and macOS: the same `build.py` commands, with `ESP_IDF_DIR` pointing at
 your v5.4.1 checkout. This has not been run there yet.

@@ -1,5 +1,9 @@
 # T-Embed CC1101 Plus: lab-profile fork
 
+> Historical project notes. The lab-profile app/source exclusions and linked
+> image deny-list described here have been removed; the root README describes
+> the current full-profile build.
+
 Branch `tembed-plus/lab-profile`, started 2026-11-14 from
 Sor3nt/Flipper-Zero-ESP32-Port `ef4d8f3b`.
 
@@ -8,10 +12,9 @@ passive by default and scoped to equipment you own or are authorised to test.
 Momentum is the feature reference; Unleashed is a secondary source for
 protocols Momentum lacks.
 
-**State in one line:** it builds reproducibly, the excluded features are
-verifiably absent from the image, and CI publishes each build to a web
-flasher at <https://danyokkk.github.io/Momentum-Firmware-T-Embed-C1101/>; it
-has not been run on a device.
+**Historical state:** it built reproducibly with the exclusions listed below.
+The current build no longer applies those app/source exclusions or the linked
+image deny-list. It has not been run on a device.
 
 | Document | What it answers |
 | --- | --- |
@@ -78,7 +81,7 @@ The board is chosen with `-DFLIPPER_BOARD=lilygo_t_embed_cc1101`, which selects
 | Check | Result |
 | --- | --- |
 | Firmware build, ESP-IDF v5.4.1, Windows 11 | passes; see `RELEASE_GUIDE.md` for the image size |
-| `check_lab_exclusions.py` on the linked ELF | passes: no excluded app, source or symbol; `esp_wifi_80211_tx` and `esp_now_init` are not linked |
+| Lab-profile linked-image deny-list | historical check; removed from the current build |
 | `tests/subghz_ws/run.py` | passes: 2130 checks (Windows build, so without ASan/UBSan) |
 | `tests/subghz_region/run.py`, `tests/ble_lab/run.py` | pass: 212 and 29 checks |
 | SDK blob hash after the build | unchanged |

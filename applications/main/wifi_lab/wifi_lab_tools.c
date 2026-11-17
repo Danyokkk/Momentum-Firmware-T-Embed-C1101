@@ -686,8 +686,7 @@ void wifi_lab_scene_atv_pair_on_exit(void* context) {
 /*
  * Only the plain receiver of the engine is used. Its other entry points
  * (advertising many fake printers, taking over another printer's name or
- * address) are never called and are not linked: check_lab_exclusions.py
- * fails the build if they appear in the image.
+ * address) are not called by this app.
  */
 
 static void wifi_lab_airprint_render(WifiLab* app) {

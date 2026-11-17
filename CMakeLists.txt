@@ -84,24 +84,9 @@ if(("${FLIPPER_BOARD}" STREQUAL "paradoxt" OR
 endif()
 
 # ---------------------------------------------------------------------------
-# Build profile.
-#
-# "lab" is the only profile this fork builds. It is a passive-by-default,
-# authorised-lab firmware: the features listed as "excluded for safety" in
-# docs/tembed-plus/FEATURE_MATRIX.md are not compiled, and the build never
-# modifies the installed ESP-IDF. The policy lives in three places:
-#   - here            : no SDK patching, FURI_PROFILE_LAB=1 for all C/C++ code
-#   - fam_config.py   : apps and per-app sources that are left out
-#   - #ifndef FURI_PROFILE_LAB guards in the remaining mixed apps
-# tools/tembed_plus/check_lab_exclusions.py verifies the result on the linked
-# image, so a regression fails the build check instead of shipping.
+# Build profile label. No profile-based app or source exclusions are applied.
 # ---------------------------------------------------------------------------
-set(FLIPPER_PROFILE "lab" CACHE STRING "Build profile (only \"lab\" is supported by this fork)")
-if(NOT FLIPPER_PROFILE STREQUAL "lab")
-    message(FATAL_ERROR
-        "FLIPPER_PROFILE='${FLIPPER_PROFILE}' is not supported. This fork only builds the "
-        "\"lab\" profile; see docs/tembed-plus/FEATURE_MATRIX.md.")
-endif()
+set(FLIPPER_PROFILE "full" CACHE STRING "Build profile label")
 set(ENV{FLIPPER_PROFILE} "${FLIPPER_PROFILE}")
 
 # ---------------------------------------------------------------------------
@@ -151,8 +136,6 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 if(DEFINED FLIPPER_DEPENDENCIES_LOCK)
     idf_build_set_property(DEPENDENCIES_LOCK "${FLIPPER_DEPENDENCIES_LOCK}")
 endif()
-# Visible to every component and every generated app target.
-idf_build_set_property(COMPILE_DEFINITIONS "FURI_PROFILE_LAB=1" APPEND)
 project(furi_esp32)
 # cmake/wifite_sdk_adapter.cmake (swaps the SDK's esp_wps.c for a modified copy
 # used by the WPS PIN attack engine) is intentionally not included.

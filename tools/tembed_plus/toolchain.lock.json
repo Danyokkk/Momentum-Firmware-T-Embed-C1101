@@ -1,6 +1,6 @@
 {
   "board": "lilygo_t_embed_cc1101",
-  "profile": "lab",
+  "profile": "full",
   "idf_target": "esp32s3",
   "build_dir": "build_t_embed_plus",
   "sdkconfig_defaults": [

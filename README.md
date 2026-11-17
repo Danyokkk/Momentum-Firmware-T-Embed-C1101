@@ -1,8 +1,8 @@
-# T-Embed CC1101 Plus lab firmware
+# T-Embed CC1101 Plus firmware
 
 [![Firmware and web flasher](https://github.com/Danyokkk/Momentum-Firmware-T-Embed-C1101/actions/workflows/firmware.yml/badge.svg)](https://github.com/Danyokkk/Momentum-Firmware-T-Embed-C1101/actions/workflows/firmware.yml)
 
-**Unofficial, Momentum-inspired Flipper-style firmware for the LilyGO T-Embed CC1101 Plus**, built on [Sor3nt's Flipper-Zero-ESP32-Port](https://github.com/Sor3nt/Flipper-Zero-ESP32-Port) with a passive-by-default *lab profile*.
+**Unofficial, Momentum-inspired Flipper-style firmware for the LilyGO T-Embed CC1101 Plus**, built on [Sor3nt's Flipper-Zero-ESP32-Port](https://github.com/Sor3nt/Flipper-Zero-ESP32-Port). The build includes the apps and source files previously filtered by this fork's lab profile, including WLAN, BLE Spam, BadUSB, NFC write/emulation scenes, nRF24 transmit features, and Sub-GHz jammer/brute-force scenes.
 
 ### [Install it from your browser &rarr;](https://danyokkk.github.io/Momentum-Firmware-T-Embed-C1101/)
 
@@ -11,9 +11,9 @@ Chrome, Edge or Opera on a computer. The page backs the device up first, checks 
 > [!WARNING]
 > **Experimental.** These builds have not been tested on a physical T-Embed yet. Keep the backup the flasher makes. The chip's download mode is in ROM, so a bad flash is always recoverable.
 
-- **In it:** Sub-GHz read and decode (58 remote and sensor protocols plus 25 weather stations) with region-gated transmit, read-only NFC, infrared, nRF24 detection and spectrum, passive Wi-Fi and BLE tools, U2F, archive, JavaScript apps, menu styles.
-- **Left out on purpose:** Wi-Fi deauthentication, evil portal, handshake capture and WPS attacks; Sub-GHz jamming, brute force and rolling-code transmit; NFC key attacks, cloning, emulation and writing; nRF24 jamming and MouseJack; BLE spam; BadUSB.
-- **How builds are made:** GitHub Actions builds every binary from this repository with a pinned ESP-IDF v5.4.1, fails the build if a left-out feature is linked, and attests each file: `gh attestation verify furi_esp32.bin --repo Danyokkk/Momentum-Firmware-T-Embed-C1101`.
+- **Features:** Sub-GHz receive, decode and transmit; NFC read/write/emulation; infrared; Wi-Fi and BLE apps; nRF24 features; HID and BadUSB; JavaScript apps; and the other built-in apps supported by the selected board. Hardware, SDK, and board support still determine which features work on a given target.
+- **Build:** GitHub Actions builds from this repository with pinned ESP-IDF v5.4.1. The firmware build no longer filters apps or source files or runs a feature deny-list check. Each release artifact can be verified with `gh attestation verify furi_esp32.bin --repo Danyokkk/Momentum-Firmware-T-Embed-C1101`.
+- **Wi-Fi SDK note:** the build keeps Espressif's SDK files unchanged. The optional WPS attack engine is not wired into this fork's Wi-Fi component, and raw deauthentication support depends on the exact ESP-IDF Wi-Fi blob; the stock blob may reject those frames.
 - **Docs:** [report](docs/tembed-plus/REPORT.md) &middot; [feature matrix](docs/tembed-plus/FEATURE_MATRIX.md) &middot; [Momentum parity](docs/tembed-plus/MOMENTUM_PARITY.md) &middot; [release guide](docs/tembed-plus/RELEASE_GUIDE.md) (flashing, recovery, RF rules) &middot; [provenance and licences](docs/tembed-plus/PROVENANCE.md)
 - **Releases:** pushing a tag such as `v0.1.0` makes Actions publish a GitHub release and add it to the web flasher.
 
@@ -21,7 +21,7 @@ Not affiliated with or endorsed by Next-Flip (Momentum), Flipper Devices, LilyGO
 
 ---
 
-*Everything below is the README of the upstream project, Sor3nt's Flipper-Zero-ESP32-Port, kept unchanged. It describes the upstream firmware: several features listed there (Wi-Fi attacks, jammers, BLE spam, BadUSB and others) are not in this fork's builds, and its links to a web flasher and releases install the upstream firmware, not this one.*
+*The feature reference below is carried over from Sor3nt's Flipper-Zero-ESP32-Port. Some details and links refer to upstream releases and hardware; use this repository's installer and releases for this fork.*
 
 ---
 
@@ -30,7 +30,7 @@ Not affiliated with or endorsed by Next-Flip (Momentum), Flipper Devices, LilyGO
 >
 > A firmware build distributed under the name **"L15Dev" / "Bitwire"** has been reported to contain **malware (a virus) and a backdoor**. **Do not download, flash, or run it under any circumstances.**
 >
-> Only use the official builds from this repository / the [web flasher](https://sor3nt.github.io/interface.html). If you already flashed an "L15Dev" image, re-flash a clean official build and treat any credentials/data on the device (WiFi passwords, captures) as compromised.
+> Use builds from this repository and its [web flasher](https://danyokkk.github.io/Momentum-Firmware-T-Embed-C1101/). If you already flashed an "L15Dev" image, re-flash a clean build and treat any credentials/data on the device (WiFi passwords, captures) as compromised.
 
 > WARNING: I do not take responsibility if you damage your board or property. This guide is for educational purposes only — proceed at your own risk.
 

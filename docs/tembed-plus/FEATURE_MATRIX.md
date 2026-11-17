@@ -1,6 +1,10 @@
 # Feature matrix: T-Embed CC1101 Plus, lab profile
 
-Last updated 2026-11-15 for branch `tembed-plus/lab-profile`
+> Historical matrix: its lab-profile exclusion statuses predate the full-profile
+> build. The current build includes the previously filtered apps and sources;
+> see the repository README for remaining SDK and hardware limitations.
+
+Last updated 2026-11-18 for branch `tembed-plus/lab-profile`
 (base: Sor3nt `ef4d8f3b`).
 
 ## How to read this
@@ -14,7 +18,7 @@ Last updated 2026-11-15 for branch `tembed-plus/lab-profile`
 | needs porting | wanted, exists in Momentum/Unleashed or needs writing, not done yet |
 | needs hardware | requires something that is not on the Plus |
 | unsupported | the Plus hardware cannot do it |
-| excluded | deliberately not built (safety scope) |
+| excluded | was deliberately not built in the historical lab profile |
 
 **Evidence** is how far it has actually been checked, and is the column to
 trust:
@@ -22,7 +26,7 @@ trust:
 | Evidence | Meaning |
 | --- | --- |
 | build | compiles and links for `lilygo_t_embed_cc1101`. Nothing more. |
-| image check | `check_lab_exclusions.py` confirmed it on the linked ELF |
+| image check | historical lab-profile check; no longer run by the current build |
 | host test | exercised by an offline test on a PC |
 | hardware | observed working on a physical Plus |
 
@@ -34,7 +38,8 @@ ships it and it still compiles", not "it works".
 
 | Feature | Status | Evidence | Notes | Acceptance check on hardware |
 | --- | --- | --- | --- | --- |
-| Boot intro: "T-Embed CC1101 Plus lab firmware, made by daan1k", 1.8 s before the desktop | new | build | `desktop_boot_intro()` in `applications/services/desktop/desktop.c` | shows once per power-up |
+| Boot intro: "T-Embed CC1101 Plus lab firmware, made by daan1k" (bold attribution), 1.8 s before the desktop | new | build | `desktop_boot_intro()` in `applications/services/desktop/desktop.c` | shows once per power-up |
+| English / Spanish / Russian UI and boot language choice | needs porting | — | no string-catalog translation layer exists; a selector alone would not translate the Flipper-style UI | translate the system and app strings, then persist and apply the boot choice |
 | Boot to desktop, encoder navigation, side key = back | built | build | unchanged from upstream | cold boot 10× from battery; no boot loop; menu reachable |
 | Display (ST7789 320×170) | built | build | reset-pin question in `BOARD_PROFILE.md` | full-screen pattern, no offset or tearing |
 | SD card, archive browser | built | build | shared SPI with radios; Plus SD-recovery option is off | mount SanDisk ≤ 32 GB; browse, create, delete; survive 20 Sub-GHz RX sessions |
@@ -203,13 +208,13 @@ The follow-up brief settled what the first pass had left open:
 - Host tests cover the new decoders, the region table and the BLE advert
   parser; the rest of the tree relies on upstream's own suites.
 - Battery life, run-time free heap, task stacks and SD throughput are unmeasured
-  (they need a device). Static RAM is measured from the linker map
-  (2026-11-16, after merging upstream `e6ec1197`): 205,699 of 341,760 bytes of
-  internal D/IRAM used, 136,061 free before the heap starts (the WiFi Lab
-  tools and Sub-GHz Remote added about 6.4 KB of that; their working buffers
-  are allocated only while a tool is open, mostly in PSRAM). The 37 decoders
-  this fork added put 4 bytes in static RAM (code and tables are in flash) and
-  about 3.4 KB plus allocator overhead on the heap while a Sub-GHz receiver
-  exists (upstream's own 63 decoders: 6.9 KB). The BLE Lab device table
+  (they need a device). The 2026-11-18 T-Embed linker map reports 16,383 of
+  16,384 bytes of IRAM used (1 byte free) and 205,940 of 341,760 bytes of
+  combined internal D/IRAM used (135,820 free before heap allocations). The
+  WiFi Lab tools and Sub-GHz Remote account for about 6.4 KB of static memory;
+  their working buffers are allocated only while a tool is open, mostly in
+  PSRAM. The 37 decoders this fork added put 4 bytes in static RAM; their code
+  and tables are in flash. A Sub-GHz receiver uses about 3.4 KB plus allocator
+  overhead (upstream's own 63 decoders: 6.9 KB). The BLE Lab device table
   (3.2 KB) sits in PSRAM on ESP32-S3 boards.
 - Remaining Momentum features are listed as "todo" in `MOMENTUM_PARITY.md`.

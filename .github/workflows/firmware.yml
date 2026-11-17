@@ -43,7 +43,7 @@ jobs:
         run: node tests/web/test_md5.mjs
 
   build:
-    name: Build T-Embed CC1101 Plus (lab profile)
+    name: Build T-Embed CC1101 Plus (full profile)
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     container: espressif/idf:v5.4.1
@@ -63,15 +63,15 @@ jobs:
           short="${GITHUB_SHA::7}"
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             label="$GITHUB_REF_NAME"
-            firmware_label="lab.$GITHUB_REF_NAME"
+            firmware_label="full.$GITHUB_REF_NAME"
             if [[ "$label" == *-* ]]; then channel=prerelease; else channel=release; fi
           elif [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
             label="pr${{ github.event.number }}-$short"
-            firmware_label="lab.$short"
+            firmware_label="full.$short"
             channel=dev
           else
             label="main-$short"
-            firmware_label="lab.$short"
+            firmware_label="full.$short"
             channel=dev
           fi
           {

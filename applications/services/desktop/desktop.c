@@ -871,7 +871,10 @@ static void desktop_boot_intro_draw(Canvas* canvas, void* context) {
     canvas_draw_str_aligned(canvas, 64, 28, AlignCenter, AlignCenter, "lab firmware");
     canvas_draw_line(canvas, 24, 38, 104, 38);
     canvas_set_font(canvas, FontPrimary);
-    canvas_draw_str_aligned(canvas, 64, 50, AlignCenter, AlignCenter, "made by daan1k");
+    /* Canvas has no bold font variant; two centered passes add weight without
+     * changing the overall alignment of the attribution. */
+    canvas_draw_str_aligned(canvas, 63, 50, AlignCenter, AlignCenter, "made by daan1k");
+    canvas_draw_str_aligned(canvas, 65, 50, AlignCenter, AlignCenter, "made by daan1k");
 }
 
 static void desktop_boot_intro(Gui* gui) {

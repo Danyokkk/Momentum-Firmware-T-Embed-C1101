@@ -371,9 +371,7 @@ def gather_asset_dependencies(asset_roots: Iterable[Path]) -> list[Path]:
 def generate_ported_cmake(
     buildset: AppBuildset,
     project_dir: Path,
-    excluded_sources: dict[str, list[str]] | None = None,
 ) -> str:
-    excluded_sources = excluded_sources or {}
     contents = [
         "set(ESP32_FAM_PORTED_OBJECT_TARGETS)",
         "",
@@ -396,13 +394,7 @@ def generate_ported_cmake(
 
     for app in ported_apps:
         app_root = Path(app._apppath)
-        # Per-app source exclusions from fam_config.py (LAB_EXCLUDED_SOURCES). They
-        # use the manifest's own "!pattern" exclusion syntax, so an excluded file
-        # is never handed to the compiler.
-        excluded_patterns = [
-            "!" + pattern for pattern in excluded_sources.get(app.appid, ())
-        ]
-        app_sources = gather_sources(app_root, list(app.sources) + excluded_patterns)
+        app_sources = gather_sources(app_root, list(app.sources))
         app_target = f"esp32_fam_app_{app.appid}"
         icon_include_dir = None
 
@@ -557,9 +549,7 @@ def main() -> int:
 
     cmake_out = Path(args.cmake_out)
     cmake_out.parent.mkdir(parents=True, exist_ok=True)
-    cmake_out.write_text(generate_ported_cmake(
-            buildset, project_dir, dict(config.get("LAB_EXCLUDED_SOURCES", {}))
-        ), encoding="utf-8")
+    cmake_out.write_text(generate_ported_cmake(buildset, project_dir), encoding="utf-8")
     return 0
 
 

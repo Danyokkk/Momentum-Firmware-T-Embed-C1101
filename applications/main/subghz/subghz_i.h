@@ -11,8 +11,7 @@
 #include "views/subghz_read_raw.h"
 #include "views/subghz_playlist.h"
 #include "views/subghz_view_tpms_info.h"
-/* Lab profile: the jammer and the code brute-forcer are not built
- * (fam_config.py, LAB_EXCLUDED_SOURCES). */
+/* Jammer and code brute-forcer scene interfaces. */
 #ifndef FURI_PROFILE_LAB
 #include "views/subghz_jammer.h"
 #include "views/subbrute_main_view.h"

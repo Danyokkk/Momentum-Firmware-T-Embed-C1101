@@ -27,6 +27,7 @@ typedef int esp_err_t;
 #define ESP_LOGE(...) test_log(__VA_ARGS__)
 void test_log(const char* tag,const char* format,...) {(void)tag;(void)format;}
 const char* esp_err_to_name(esp_err_t e) {(void)e;return "injected";}
+int64_t esp_timer_get_time(void) {static int64_t now;return now+=100;}
 typedef unsigned char BYTE,DSTATUS;
 typedef uint16_t WORD;
 typedef uint32_t DWORD,UINT;
@@ -44,6 +45,9 @@ enum {GpioModeOutputPushPull=1};
 typedef int sdspi_dev_handle_t;
 typedef struct {int host_id,gpio_cs,gpio_cd,gpio_wp,gpio_int;} sdspi_device_config_t;
 typedef struct {int slot,max_freq_khz;esp_err_t(*init)(void);} sdmmc_host_t;
+esp_err_t sdspi_host_get_real_freq(sdspi_dev_handle_t handle,int* real_freq_khz) {
+    assert(handle==1&&real_freq_khz);*real_freq_khz=20000;return ESP_OK;
+}
 typedef struct {
     uint32_t is_mem,is_sdio,is_mmc,ocr,max_freq_khz;
     int real_freq_khz;

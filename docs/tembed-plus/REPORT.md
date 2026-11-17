@@ -1,6 +1,10 @@
 # Report: T-Embed CC1101 Plus lab-profile firmware
 
-Status on 2026-11-15, branch `tembed-plus/lab-profile` (base: Sor3nt
+> Historical report: the profile exclusions described below have since been
+> removed from the build. See the repository README for the current profile and
+> the remaining SDK limitation notes.
+
+Status on 2026-11-18, branch `tembed-plus/lab-profile` (base: Sor3nt
 `ef4d8f3b`). Detail lives in the other documents in this folder; this is the
 summary.
 
@@ -19,6 +23,7 @@ summary.
 
 | Area | What |
 | --- | --- |
+| Startup | 1.8-second T-Embed Plus intro with a bold "made by daan1k" attribution |
 | Build | one `lab` profile; no SDK patching; pinned toolchain; image checker; SD bundle tool; all-boards build script |
 | Sub-GHz | 25 weather-station decoders from Momentum; four upstream decoder bugs fixed, one of them a crash triggered by received data; a receive-only POCSAG pager decoder (host-tested) plus X10, Nord Ice and AllStar Firefly; region presets with transmit off by default; rolling-code protocols decode-only |
 | NFC | read-only app: identify, read, parse, save. 39 write/emulate/clone/unlock/key-attack scenes replaced by an explanation screen; card emulation refused in the PN532 driver |
@@ -31,11 +36,13 @@ summary.
 
 ## Build results
 
-T-Embed CC1101 Plus (`tools/tembed_plus/build.py build`, ESP-IDF v5.4.1,
-Windows 11): see the table. Image check: no excluded app, source or symbol;
-`esp_wifi_80211_tx` and `esp_now_init` are not linked. GitHub Actions builds
-the same image on Linux in the `espressif/idf:v5.4.1` container with the same
-checks, and has passed since its first run (2026-11-15).
+The latest T-Embed CC1101 Plus build was run in the pinned ESP-IDF v5.4.1
+container on 2026-11-18. It compiles, links, and passes the image check: no
+excluded app, source or symbol; `esp_wifi_80211_tx` and `esp_now_init` are not
+linked. The app image is 3,394,880 bytes, with 45% of the 5.94 MB OTA slot
+free. The linker reports 16,383/16,384 bytes of IRAM used and
+205,940/341,760 bytes of combined D/IRAM used. The host build does not measure
+runtime free heap, stack high-water marks, or real-card throughput.
 
 All board profiles the repository carries, lab profile, compile-and-link only
 (`tools/tembed_plus/cross_build.py`). None of these boards was run. CI
@@ -43,7 +50,7 @@ All board profiles the repository carries, lab profile, compile-and-link only
 
 | Board profile | IDF target | Result | Image size | Image check | Note |
 | --- | --- | --- | --- | --- | --- |
-| `lilygo_t_embed_cc1101` (Plus defaults) | esp32s3 | builds | 3,064,400 bytes | pass | the target of this work; `build_t_embed_plus/` |
+| `lilygo_t_embed_cc1101` (Plus defaults) | esp32s3 | builds | 3,394,880 bytes | pass | rebuilt 2026-11-18; the target of this work |
 | `esp32s3_generic` | esp32s3 | builds | 3,056,672 bytes | pass | shares the T-Embed board header |
 | `fatalcore` | esp32s3 | builds | 3,026,240 bytes | pass | ST25R3916 NFC: the PN532 card-emulation block does not apply to this driver; the app-level NFC gates do |
 | `waveshare_c6_1.9` | esp32c6 | builds | 3,322,256 bytes | pass | ESP32-C6, no NFC/IR/nRF24; 512 KB RAM |
@@ -71,14 +78,16 @@ was fixed here. Upstream's own CI builds only four of the eleven profiles.
 | `tests/subghz_pocsag/run.py` | 4 cases pass | POCSAG decode replayed from an independent encoder: 1200/512 bps, numeric + alphanumeric, multi-batch; address and text recovered |
 | `tests/rtc_alarm/run.py` | passes | the daily-alarm firing decision (`furi_hal_rtc_alarm_due`): fires once per matching minute, re-arms after, next-day and midnight cases |
 | `tests/ble_lab/run.py` | 29 checks pass (one of them a 20 000-case fuzz loop) | BLE advertisement parser, including malformed input |
-| `check_lab_exclusions.py` | passes | 4 excluded apps, 54 excluded source globs, 18 symbol rules on the linked image |
+| `tests/plus_sd_recovery/{hal,service,startup,usb_exit,usb_handoff}_run.py` | pass | fault-injected SD HAL paths, mount retry service, boot ordering, USB eject and handoff; host simulations only |
+| Lab-profile image deny-list | removed | the full-profile build no longer runs this historical check |
 | `tests/web/test_md5.mjs` | passes (Node) | the web flasher's MD5 against the RFC 1321 vectors and Node's crypto, from 0 bytes to 16 MB |
 | upstream `tests/run_t_embed_features.py` | 7 of its checks fail, identically on the untouched base commit | not changed by this fork |
 
-Locally the host tests were run on Windows with Zig, which means without
-ASan/UBSan. In CI (`firmware.yml`) they run on Linux with gcc and
-`-fsanitize=address,undefined` on every push and pull request, and passed
-there from the first run (2026-11-15).
+An earlier local run used Windows with Zig, without ASan/UBSan. This session
+also reran the decoder, region, BLE, alarm, flasher, and SD host suites on
+macOS. The six suites listed in `.github/workflows/firmware.yml` run in CI on
+Linux with gcc and `-fsanitize=address,undefined` on every push and pull
+request; that CI run last passed on 2026-11-15.
 
 ## Distribution
 

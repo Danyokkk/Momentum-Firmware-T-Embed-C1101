@@ -13,9 +13,7 @@
 #include <wifi.h>
 
 #include "views/nrf24_spectrum_view.h"
-/* Lab profile: only module detection and the receive-only spectrum view are
- * built. The jammer and MouseJack sources are not compiled (fam_config.py,
- * LAB_EXCLUDED_SOURCES) and nothing below references them. */
+/* nRF24 jammer, scanning, and MouseJack scene interfaces. */
 #ifndef FURI_PROFILE_LAB
 #include "views/nrf24_jam_view.h"
 #include "views/nrf24_scan_view.h"

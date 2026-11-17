@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build every board profile this repository claims to support, lab profile.
+"""Build every board profile this repository claims to support.
 
     python tools/tembed_plus/cross_build.py                      # all boards
     python tools/tembed_plus/cross_build.py --boards fatalcore paradoxt
@@ -8,10 +8,6 @@
 Each board gets its own build directory (build_x_<board>) and its own
 sdkconfig, using the same defaults chain as upstream's build.sh:
 sdkconfig.defaults plus sdkconfig.defaults.<board> when that file exists.
-After a successful build the linked image is checked with
-check_lab_exclusions.py (apps, sources and symbols; the sdkconfig expectations
-there are specific to the T-Embed Plus defaults and are skipped).
-
 This only proves that a profile compiles and links. None of these boards has
 been run.
 """
@@ -71,12 +67,12 @@ def build_board(board: str, target: str, idf: Path, env: dict[str, str]) -> dict
         "-B",
         build_dir,
         f"-DFLIPPER_BOARD={board}",
-        "-DFLIPPER_PROFILE=lab",
+        "-DFLIPPER_PROFILE=full",
         f"-DSDKCONFIG={build_dir}/sdkconfig",
         f"-DSDKCONFIG_DEFAULTS={';'.join(defaults)}",
         f"-DFLIPPER_DEPENDENCIES_LOCK={board_lock.as_posix()}",
     ]
-    board_env = dict(env, FLIPPER_BOARD=board, FLIPPER_PROFILE="lab")
+    board_env = dict(env, FLIPPER_BOARD=board, FLIPPER_PROFILE="full")
     log_path = REPO_ROOT / f"{build_dir}.log"
     started = time.time()
     result = {"board": board, "target": target, "defaults": defaults, "log": log_path.name}
@@ -94,20 +90,7 @@ def build_board(board: str, target: str, idf: Path, env: dict[str, str]) -> dict
                 return result
     binary = REPO_ROOT / build_dir / "furi_esp32.bin"
     result["image_bytes"] = binary.stat().st_size if binary.is_file() else None
-    check = subprocess.run(
-        [
-            sys.executable,
-            str(Path(__file__).with_name("check_lab_exclusions.py")),
-            "--build-dir",
-            str(REPO_ROOT / build_dir),
-            "--no-sdkconfig",
-        ],
-        env=board_env,
-        capture_output=True,
-        text=True,
-    )
-    result["image_check"] = "pass" if check.returncode == 0 else check.stdout.strip()
-    result["status"] = "ok" if check.returncode == 0 else "LINKED-BUT-CHECK-FAILED"
+    result["status"] = "ok"
     result["seconds"] = round(time.time() - started)
     return result
 
