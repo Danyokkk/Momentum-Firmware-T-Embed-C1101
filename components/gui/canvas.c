@@ -164,13 +164,41 @@ void canvas_invert_color(Canvas* canvas) {
     canvas->fb.draw_color = !canvas->fb.draw_color;
 }
 
+/* Active UI language (LocaleLang value). Owned here so the whole UI switches
+ * script from one place: every screen goes through canvas_set_font(FontPrimary/
+ * FontSecondary), so pointing those two slots at a language's font makes all
+ * menus, dialogs and errors render that language's glyphs. English keeps the
+ * exact original faces; Spanish uses the same Helvetica face with Latin-1
+ * accents; Russian uses a Cyrillic face. The locale service sets this via
+ * canvas_set_ui_language(). */
+static uint8_t canvas_ui_language = 0; /* 0 = English */
+
+const uint8_t* canvas_ui_language_font(uint8_t lang, bool primary) {
+    switch(lang) {
+    case 1: /* Spanish: Helvetica with full Latin-1 (accents, ñ, ¿, ¡) */
+        return primary ? u8g2_font_helvB08_tf : u8g2_font_helvR08_tf;
+    case 2: /* Russian: Cyrillic faces */
+        return primary ? u8g2_font_6x12_t_cyrillic : u8g2_font_5x8_t_cyrillic;
+    default: /* English: original faces, unchanged */
+        return primary ? u8g2_font_helvB08_tr : u8g2_font_haxrcorp4089_tr;
+    }
+}
+
+void canvas_set_ui_language(uint8_t lang) {
+    canvas_ui_language = lang;
+}
+
+uint8_t canvas_get_ui_language(void) {
+    return canvas_ui_language;
+}
+
 void canvas_set_font(Canvas* canvas, Font font) {
     furi_check(canvas);
     u8g2_SetFontMode(&canvas->fb, 1);
     if(font == FontPrimary) {
-        u8g2_SetFont(&canvas->fb, u8g2_font_helvB08_tr);
+        u8g2_SetFont(&canvas->fb, canvas_ui_language_font(canvas_ui_language, true));
     } else if(font == FontSecondary) {
-        u8g2_SetFont(&canvas->fb, u8g2_font_haxrcorp4089_tr);
+        u8g2_SetFont(&canvas->fb, canvas_ui_language_font(canvas_ui_language, false));
     } else if(font == FontKeyboard) {
         u8g2_SetFont(&canvas->fb, u8g2_font_profont11_mr);
     } else if(font == FontBigNumbers) {

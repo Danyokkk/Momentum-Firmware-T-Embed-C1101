@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "icon_animation.h"
 #include "icon.h"
 
@@ -32,6 +33,17 @@ typedef enum {
     // Keep last for fonts number calculation
     FontTotalNumber,
 } Font;
+
+/** Set the active UI language (LocaleLang value) that FontPrimary/FontSecondary
+ * resolve to. 0 = English (original faces). Set by the locale service. */
+void canvas_set_ui_language(uint8_t lang);
+
+/** Get the active UI language value previously set. */
+uint8_t canvas_get_ui_language(void);
+
+/** u8g2 font pointer for a language's primary (true) or secondary (false) slot.
+ * Lets the first-boot picker draw each option in its own script. */
+const uint8_t* canvas_ui_language_font(uint8_t lang, bool primary);
 
 /** Alignment enumeration */
 typedef enum {

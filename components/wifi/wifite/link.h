@@ -10,6 +10,10 @@ typedef struct {
 /* Calls below run on the firmware WLAN worker, while holding its radio lease.
  * Callbacks run on the driver task and must not block or call Wi-Fi APIs. */
 esp_err_t wf_link_install(const WfLinkCallbacks *callbacks);
+/* Arm/disarm the WPS registrar backend. OFF by default; wf_link_connect refuses
+ * until armed via an explicit authorized-testing opt-in. */
+void wf_link_arm(bool armed);
+bool wf_link_is_armed(void);
 esp_err_t wf_link_connect(const WfTarget *target);
 esp_err_t wf_link_send(const uint8_t *ethernet, size_t n);
 void wf_link_disconnect(void);

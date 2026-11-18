@@ -39,7 +39,7 @@ ships it and it still compiles", not "it works".
 | Feature | Status | Evidence | Notes | Acceptance check on hardware |
 | --- | --- | --- | --- | --- |
 | Boot intro: "T-Embed CC1101 Plus lab firmware, made by daan1k" (bold attribution), 1.8 s before the desktop | new | build | `desktop_boot_intro()` in `applications/services/desktop/desktop.c` | shows once per power-up |
-| English / Spanish / Russian UI and boot language choice | needs porting | — | no string-catalog translation layer exists; a selector alone would not translate the Flipper-style UI | translate the system and app strings, then persist and apply the boot choice |
+| English / Spanish / Russian UI and boot language choice | new | host test | first-boot picker before the splash + **Settings → System → Language**; persisted to `/int/.locale_lang.settings`; language-aware fonts (`helvB08_tf` for ES accents, `*_t_cyrillic` for RU) switched in one place (`canvas_set_font`); core surfaces translated via `loc_str()` with English fallback (picker, System settings labels, common words, SD errors); other apps' menus stay English but render legibly. `tests/locale_i18n/run.py`; see `LANGUAGES.md` | pick each language on first boot; change in Settings; reboot keeps it; confirm á/ñ and Cyrillic render |
 | Boot to desktop, encoder navigation, side key = back | built | build | unchanged from upstream | cold boot 10× from battery; no boot loop; menu reachable |
 | Display (ST7789 320×170) | built | build | reset-pin question in `BOARD_PROFILE.md` | full-screen pattern, no offset or tearing |
 | SD card, archive browser | built | build | shared SPI with radios; Plus SD-recovery option is off | mount SanDisk ≤ 32 GB; browse, create, delete; survive 20 Sub-GHz RX sessions |

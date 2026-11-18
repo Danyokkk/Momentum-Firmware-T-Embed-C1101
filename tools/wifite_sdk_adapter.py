@@ -8,12 +8,19 @@ import hashlib
 from pathlib import Path
 import sys
 
+# SHA-256 of the pristine ESP-IDF v5.4.1 esp_wps.c this adapter patches,
+# computed on LF-normalized content so the pin is independent of the checkout's
+# line-ending style (a git autocrlf checkout on Windows stores CRLF).
 EXPECTED = 'bd8a19e9e3f10def466718088230938c79171f80326de4111bcd3c980d20fa82'
 
 def adapt(source):
-    if hashlib.sha256(source).hexdigest() != EXPECTED:
+    # Normalize CRLF -> LF before hashing and anchoring: the SDK may be checked
+    # out with CRLF (Windows / git autocrlf), and the text anchors below use LF.
+    # The generated translation unit is emitted with LF, which the compiler
+    # accepts on every platform.
+    s = source.decode().replace('\r\n', '\n')
+    if hashlib.sha256(s.encode()).hexdigest() != EXPECTED:
         raise ValueError('WIFITE requires unmodified ESP-IDF v5.4.1 esp_wps.c')
-    s = source.decode()
     def replace(old, new):
         nonlocal s
         if s.count(old) != 1:

@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.16)
 
 set(EXTRA_COMPONENT_DIRS "components")
 
+# Offensive RF capability (raw deauth/disassoc management-frame TX via the
+# build-local Wi-Fi blob patch) is OFF by default: the shipped image is
+# passive. A lab build opts in with -DTEMBED_LAB_RF=ON. The WPS/wifite backend
+# still compiles in both builds but stays inert at runtime (nothing arms it; see
+# wf_link_connect's arm guard), so "compile the features, off by default".
+option(TEMBED_LAB_RF "Build raw deauth/disassoc management-frame TX capability (lab-only, authorized testing). OFF = passive image." OFF)
+
 # Keep board-specific sdkconfig values isolated from the shared workspace
 # sdkconfig. Paradoxt and T-Embed use the shared reboot helper, which needs the
 # dual-core and ESP Timer ISR settings from their board defaults. Explicit
@@ -131,4 +138,12 @@ project(furi_esp32)
 # Keep all SDK adaptations in the build tree; the installed ESP-IDF checkout is
 # used as a read-only source for the pinned Wi-Fi libraries and WPS source.
 include(${CMAKE_SOURCE_DIR}/cmake/wifite_sdk_adapter.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/wifi_blob_adapter.cmake)
+# Raw deauth/disassoc TX is lab-only. In the default (passive) image the vendor
+# ieee80211_raw_frame_sanity_check() stays intact, so management-frame injection
+# is rejected by the SDK and the deauth capability is simply absent.
+if(TEMBED_LAB_RF)
+    message(STATUS "TEMBED_LAB_RF=ON: building raw management-frame TX (authorized lab testing)")
+    include(${CMAKE_SOURCE_DIR}/cmake/wifi_blob_adapter.cmake)
+else()
+    message(STATUS "TEMBED_LAB_RF=OFF: passive image, no raw management-frame TX")
+endif()

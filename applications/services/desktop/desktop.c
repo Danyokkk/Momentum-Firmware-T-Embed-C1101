@@ -10,6 +10,7 @@
 #include <momentum_settings.h>
 
 #include <locale/locale.h>
+#include <locale/locale_i18n.h>
 #include <storage/storage.h>
 
 #include <assets_icons.h>
@@ -858,6 +859,73 @@ void desktop_api_set_settings(Desktop* instance, const DesktopSettings* settings
  * Application thread
  */
 
+/* First-boot language picker: shown once, before the boot intro, until the user
+ * has chosen a UI language. Each option is drawn in its own script so Spanish
+ * and Russian are legible before any font has been applied. */
+typedef struct {
+    uint8_t index; /* highlighted option, 0..LocaleLangCount-1 */
+    ViewPort* view_port;
+    FuriSemaphore* done;
+} DesktopLangPicker;
+
+static void desktop_lang_picker_draw(Canvas* canvas, void* context) {
+    DesktopLangPicker* p = context;
+    canvas_clear(canvas);
+
+    canvas_set_custom_u8g2_font(canvas, locale_lang_font_primary(LocaleLangEN));
+    canvas_draw_str_aligned(
+        canvas, 64, 9, AlignCenter, AlignCenter, loc_str_lang(LocaleLangEN, LocStrChooseLanguage));
+    canvas_draw_line(canvas, 20, 16, 108, 16);
+
+    for(uint8_t i = 0; i < LocaleLangCount; i++) {
+        const int y = 24 + i * 13;
+        canvas_set_custom_u8g2_font(canvas, locale_lang_font_primary((LocaleLang)i));
+        const char* name = locale_lang_endonym((LocaleLang)i);
+        if(i == p->index) {
+            canvas_draw_box(canvas, 12, y - 9, 104, 12);
+            canvas_set_color(canvas, ColorWhite);
+            canvas_draw_str_aligned(canvas, 64, y - 3, AlignCenter, AlignCenter, name);
+            canvas_set_color(canvas, ColorBlack);
+        } else {
+            canvas_draw_str_aligned(canvas, 64, y - 3, AlignCenter, AlignCenter, name);
+        }
+    }
+}
+
+static void desktop_lang_picker_input(InputEvent* event, void* context) {
+    DesktopLangPicker* p = context;
+    if(event->type != InputTypeShort && event->type != InputTypeRepeat) return;
+
+    if(event->key == InputKeyUp) {
+        p->index = (p->index == 0) ? (LocaleLangCount - 1) : (uint8_t)(p->index - 1);
+        view_port_update(p->view_port);
+    } else if(event->key == InputKeyDown) {
+        p->index = (uint8_t)((p->index + 1) % LocaleLangCount);
+        view_port_update(p->view_port);
+    } else if(event->key == InputKeyOk) {
+        locale_lang_set((LocaleLang)p->index);
+        furi_semaphore_release(p->done);
+    }
+}
+
+static void desktop_language_first_boot(Gui* gui) {
+    DesktopLangPicker picker = {
+        .index = (uint8_t)LocaleLangEN,
+        .view_port = view_port_alloc(),
+        .done = furi_semaphore_alloc(1, 0),
+    };
+    view_port_draw_callback_set(picker.view_port, desktop_lang_picker_draw, &picker);
+    view_port_input_callback_set(picker.view_port, desktop_lang_picker_input, &picker);
+    gui_add_view_port(gui, picker.view_port, GuiLayerFullscreen);
+    view_port_update(picker.view_port);
+
+    furi_semaphore_acquire(picker.done, FuriWaitForever);
+
+    gui_remove_view_port(gui, picker.view_port);
+    view_port_free(picker.view_port);
+    furi_semaphore_free(picker.done);
+}
+
 /* Boot intro of the T-Embed CC1101 Plus build: one screen, shown once per
  * power-up before the desktop appears. */
 #define DESKTOP_BOOT_INTRO_MS 1800
@@ -898,6 +966,14 @@ int32_t desktop_srv(void* p) {
     }
 
     Desktop* desktop = desktop_alloc();
+
+    /* Storage is up by now, so the persisted UI language can be loaded and its
+     * font applied. On the very first boot (no language saved yet) ask the user
+     * to choose one before anything else is shown. */
+    locale_i18n_init();
+    if(!locale_lang_is_configured()) {
+        desktop_language_first_boot(desktop->gui);
+    }
 
     desktop_boot_intro(desktop->gui);
 

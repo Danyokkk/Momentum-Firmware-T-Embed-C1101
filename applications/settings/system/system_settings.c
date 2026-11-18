@@ -2,6 +2,15 @@
 #include <loader/loader.h>
 #include <lib/toolbox/value_index.h>
 #include <locale/locale.h>
+#include <locale/locale_i18n.h>
+
+static void language_changed(VariableItem* item) {
+    uint8_t index = variable_item_get_current_value_index(item);
+    /* Apply immediately so the whole list redraws in the chosen script, then the
+     * endonym in the value column renders with the matching font. */
+    locale_lang_set((LocaleLang)index);
+    variable_item_set_current_value_text(item, locale_lang_endonym((LocaleLang)index));
+}
 
 const char* const log_level_text[] = {
     "Default",
@@ -229,14 +238,20 @@ SystemSettings* system_settings_alloc(void) {
     app->var_item_list = variable_item_list_alloc();
 
     item = variable_item_list_add(
-        app->var_item_list, "Hand Orient", COUNT_OF(hand_mode), hand_orient_changed, app);
+        app->var_item_list, loc_str(LocStrLanguage), LocaleLangCount, language_changed, app);
+    value_index = (uint8_t)locale_lang_get();
+    variable_item_set_current_value_index(item, value_index);
+    variable_item_set_current_value_text(item, locale_lang_endonym((LocaleLang)value_index));
+
+    item = variable_item_list_add(
+        app->var_item_list, loc_str(LocStrHandOrient), COUNT_OF(hand_mode), hand_orient_changed, app);
     value_index = furi_hal_rtc_is_flag_set(FuriHalRtcFlagHandOrient) ? 1 : 0;
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, hand_mode[value_index]);
 
     item = variable_item_list_add(
         app->var_item_list,
-        "Units",
+        loc_str(LocStrUnits),
         COUNT_OF(measurement_units_text),
         measurement_units_changed,
         app);
@@ -246,28 +261,28 @@ SystemSettings* system_settings_alloc(void) {
     variable_item_set_current_value_text(item, measurement_units_text[value_index]);
 
     item = variable_item_list_add(
-        app->var_item_list, "Time Format", COUNT_OF(time_format_text), time_format_changed, app);
+        app->var_item_list, loc_str(LocStrTimeFormat), COUNT_OF(time_format_text), time_format_changed, app);
     value_index = value_index_uint32(
         locale_get_time_format(), time_format_value, COUNT_OF(time_format_value));
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, time_format_text[value_index]);
 
     item = variable_item_list_add(
-        app->var_item_list, "Date Format", COUNT_OF(date_format_text), date_format_changed, app);
+        app->var_item_list, loc_str(LocStrDateFormat), COUNT_OF(date_format_text), date_format_changed, app);
     value_index = value_index_uint32(
         locale_get_date_format(), date_format_value, COUNT_OF(date_format_value));
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, date_format_text[value_index]);
 
     item = variable_item_list_add(
-        app->var_item_list, "Log Level", COUNT_OF(log_level_text), log_level_changed, app);
+        app->var_item_list, loc_str(LocStrLogLevel), COUNT_OF(log_level_text), log_level_changed, app);
     value_index = value_index_uint32(
         furi_hal_rtc_get_log_level(), log_level_value, COUNT_OF(log_level_text));
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, log_level_text[value_index]);
 
     item = variable_item_list_add(
-        app->var_item_list, "Log Device", COUNT_OF(log_device_text), log_device_changed, app);
+        app->var_item_list, loc_str(LocStrLogDevice), COUNT_OF(log_device_text), log_device_changed, app);
     value_index = value_index_uint32(
         furi_hal_rtc_get_log_device(), log_device_value, COUNT_OF(log_device_text));
     variable_item_set_current_value_index(item, value_index);
@@ -275,7 +290,7 @@ SystemSettings* system_settings_alloc(void) {
 
     item = variable_item_list_add(
         app->var_item_list,
-        "Log Baud Rate",
+        loc_str(LocStrLogBaudRate),
         COUNT_OF(log_baud_rate_text),
         log_baud_rate_changed,
         app);
@@ -285,14 +300,14 @@ SystemSettings* system_settings_alloc(void) {
     variable_item_set_current_value_text(item, log_baud_rate_text[value_index]);
 
     item = variable_item_list_add(
-        app->var_item_list, "Debug", COUNT_OF(debug_text), debug_changed, app);
+        app->var_item_list, loc_str(LocStrDebug), COUNT_OF(debug_text), debug_changed, app);
     value_index = furi_hal_rtc_is_flag_set(FuriHalRtcFlagDebug) ? 1 : 0;
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, debug_text[value_index]);
 
     item = variable_item_list_add(
         app->var_item_list,
-        "Heap Trace",
+        loc_str(LocStrHeapTrace),
         COUNT_OF(heap_trace_mode_text),
         heap_trace_mode_changed,
         app);
@@ -303,13 +318,13 @@ SystemSettings* system_settings_alloc(void) {
     variable_item_set_current_value_text(item, heap_trace_mode_text[value_index]);
 
     item = variable_item_list_add(
-        app->var_item_list, "Sleep Method", COUNT_OF(sleep_method), sleep_method_changed, app);
+        app->var_item_list, loc_str(LocStrSleepMethod), COUNT_OF(sleep_method), sleep_method_changed, app);
     value_index = furi_hal_rtc_is_flag_set(FuriHalRtcFlagLegacySleep) ? 1 : 0;
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, sleep_method[value_index]);
 
     item = variable_item_list_add(
-        app->var_item_list, "File Naming", COUNT_OF(filename_scheme), filename_scheme_changed, app);
+        app->var_item_list, loc_str(LocStrFileNaming), COUNT_OF(filename_scheme), filename_scheme_changed, app);
     value_index = furi_hal_rtc_is_flag_set(FuriHalRtcFlagDetailedFilename) ? 1 : 0;
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, filename_scheme[value_index]);

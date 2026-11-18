@@ -25,7 +25,16 @@ esp_err_t wf_link_install(const WfLinkCallbacks *cb) {
   return ESP_OK;
 }
 
+/* Runtime arm guard: the WPS registrar/pixie backend is OFF by default. It runs
+ * only after wf_link_arm(true) is called from an explicit, authorized-testing
+ * opt-in. The default image never arms it, so the backend stays inert. */
+static bool wf_armed;
+void wf_link_arm(bool armed) { wf_armed = armed; }
+bool wf_link_is_armed(void) { return wf_armed; }
+
 esp_err_t wf_link_connect(const WfTarget *target) {
+  if (!wf_armed)
+    return ESP_ERR_INVALID_STATE; /* not armed: authorized-testing opt-in required */
   if (!installed || enabled || !target || !target->ssid_len ||
       target->ssid_len > 32 || target->channel < 1 || target->channel > 14)
     return ESP_ERR_INVALID_STATE;
