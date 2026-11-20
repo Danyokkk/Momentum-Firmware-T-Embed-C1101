@@ -180,7 +180,29 @@ BiSecur and BelKorn are rolling-code (Dynamic), so the transmitter gate makes
 them decode-only; the rest are static. All are build-verified only. A real
 Freezer capture exists in Unleashed's unit-test resources
 (`applications/debug/unit_tests/resources/unit_tests/subghz/freezer*.sub`) for
-a later host test. Prastel was left out: it needs Unleashed's `public_api.h`.
+a later host test.
+
+### 5a. Prastel 42-bit rolling code (Unleashed → this fork, 2026-11-20)
+
+| | |
+| --- | --- |
+| Source | Unleashed `dev` `lib/subghz/protocols/prastel.{c,h}` |
+| Destination | `lib/subghz/protocols/prastel.{c,h}`, byte-identical; registered in `protocol_items.{c,h}` and the `subghz_protocol_prastel_create_data` prototype added to `public_api.h` |
+| Blocks used | `custom_btn_i.h`, `blocks/{generic,decoder,encoder,math}` and `common.h` — all already present from the earlier Unleashed batch, so it grafted on unchanged |
+| Transmit | Dynamic (rolling code), so the `lib/subghz/transmitter.c` gate refuses its encoder: **decode-only**, like Hörmann BiSecur and BelKorn. The static 25-bit Prastel / 18-bit Airforce frames continue to live in `came.c` |
+| Test | `tests/subghz_prastel/run.py` (host): the scramble/unscramble, pack/unpack and button maps are reproduced byte-identical and checked for the encode→decode round-trip (serial masked, button and counter recovered) over 9,531 cases. Algorithm self-consistency, not an over-the-air capture |
+
+This closes the last Sub-GHz gap: the decoder set is now a strict superset of
+both Momentum (`d3f89df`) and Unleashed (`dev`).
+
+### 5b. Transit NFC parsers (Momentum → this fork, 2026-11-20)
+
+| | |
+| --- | --- |
+| Source | Momentum `dev` `applications/main/nfc/plugins/supported_cards/`: `sevppk_tk.c`, `sk_tk.c`, `szppk_so.c` (MIFARE Classic suburban-rail transit cards) |
+| Destination | the same path here, byte-identical apart from normalising `<bit_lib/bit_lib.h>` to `<bit_lib.h>` (this port's include spelling, matching the other 37 parsers); registered as three `FlipperAppType.PLUGIN` apps in `application.fam` |
+| Read-only | like every supported-cards plugin — they parse a card that has already been read, no keys, no write, no emulation |
+| Build | the native-Xtensa `.fal` plugin path (`tools/build_nfc_parsers.sh`, bundled to SD by CI), the same one the existing 37 parsers use. All 22 distinct NFC/bit_lib/datetime APIs they call resolve in this tree; `.fal` link not re-run on Windows this session. Brings NFC supported-card parity with Momentum to 40/40 |
 
 ### 6. Infrared universal remotes (Momentum → this fork)
 
@@ -208,13 +230,12 @@ changes, and test a flash on a device before releasing.
 
 ## Not imported (candidates)
 
-Present upstream, absent here, not yet ported:
-
-| Protocol(s) | In | Notes |
-| --- | --- | --- |
-| `hormann_bisecur` | Momentum | 868 MHz FSK rolling code: decode-only candidate |
-| `doorbell32`, `keyfinder2`, `freezer` | Unleashed only | simple static protocols; upstream fixtures exist for `freezer` |
-| `belkorn`, `faac_tm`, `prastel`, `proteco`, `telcoma_edge` | Unleashed only | gate/door remotes with encoders. Port as decode-only, or not at all, after deciding the transmit policy in `FEATURE_MATRIX.md` |
+As of 2026-11-20 every Sub-GHz protocol decoder present in Momentum `d3f89df`
+or Unleashed `dev` has been ported: `hormann_bisecur`, `doorbell32`,
+`keyfinder2`, `freezer`, `belkorn`, `faac_tm`, `proteco`, `telcoma_edge` and
+finally `prastel` (section 5a). The rolling-code ones are decode-only via the
+transmitter gate. There is no remaining Sub-GHz decoder candidate; the set is a
+strict superset of both upstreams.
 
 Infrared: the encoder/decoder set under `lib/infrared/encoder_decoder` is the
 same list of protocols in all three projects (NEC, Kaseikyo, Pioneer, RC5, RC6,

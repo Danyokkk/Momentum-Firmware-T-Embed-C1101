@@ -80,7 +80,8 @@ ships it and it still compiles", not "it works".
 | **POCSAG pager decoder** (from Momentum) | new | host test: cross-checked against an independent encoder (1200/512 bps, numeric + alphanumeric, multi-batch) | receive-only (no Send flag, null encoder); FM preset. `tests/subghz_pocsag` | tune an FM pager frequency you are licensed to monitor; a page shows RIC + text |
 | **X10, Nord Ice** (static), **AllStar Firefly** (rolling, from Momentum) | new | build | X10 and Nord Ice are static (transmit only inside a region, like the other static protocols); AllStar Firefly is rolling-code, so TX is refused — decode only | decode one of your own remotes of these types |
 | **Hörmann BiSecur, Doorbell32, KeyFinder2, Freezer, FAAC TM, Proteco, Telcoma EDGE, BelKorn** (from Momentum/Unleashed) | new | build | Hörmann BiSecur and BelKorn are rolling-code → decode-only via the gate; the rest static. Unleashed ones use their `common.c` helper | decode one of your own remotes of these types |
-| Prastel and any further Momentum/Unleashed-only protocols | needs porting | — | Prastel needs Unleashed's `public_api.h`; see `PROVENANCE.md` | — |
+| **Prastel** (42-bit rolling, from Unleashed) | new | build + host test (`tests/subghz_prastel`, 9,531 encode→decode round-trips) | rolling-code → decode-only via the gate; the static 25-bit Prastel / 18-bit Airforce stay in `came.c`. Closes the last gap: the decoder set is now a **strict superset of Momentum and Unleashed** | decode one of your own Prastel remotes |
+| Any further Momentum/Unleashed-only protocols | none remain | — | every upstream Sub-GHz decoder is ported; see `PROVENANCE.md` | — |
 | Arbitrary SDR / wideband capture | unsupported | — | CC1101 is a narrowband FSK/OOK transceiver | — |
 
 ## Infrared
@@ -97,6 +98,7 @@ ships it and it still compiles", not "it works".
 | --- | --- | --- | --- | --- |
 | Tag detection, UID read, supported-protocol parsing, save | built | build | PN532 limits apply: no ISO 15693. MIFARE Classic without known keys shows type and UID only | read an NTAG and a MIFARE Classic test card you own |
 | Card parsers (transit, NDEF, …) | built loader, **prebuilt plugins** | not rebuilt | 42 `.fal` files from upstream's SD overlay; optional in the SD bundle | open a card one parser recognises |
+| **Transit parsers: SEV-PPK, SK, SZPPK** (from Momentum) | new | API-parity checked (all 22 NFC/bit_lib APIs resolve); `.fal` link not re-run this session | read-only MIFARE Classic parsers; brings supported-card parity with Momentum to **40/40** (Sor3nt ships 37). `application.fam` PLUGIN apps, built on the existing `tools/build_nfc_parsers.sh` path | open one of these suburban-rail cards |
 | MIFARE Classic / Ultralight C dictionary attacks, mfkey32 nonce collection, key lists | excluded | image check | scenes replaced by a "Not in this build" screen; sources not compiled | no "Extract MFC Keys" in the start menu; reading a keyless MFC ends at the result screen |
 | Unlock NTAG/Ultralight/SLIX, DES key unlock | excluded | image check | same mechanism | Extra Actions shows only "Read Specific Card Type" |
 | Emulation, write, clone, Add Manually, Edit UID, RPC emulation | excluded | image check (scenes); build (driver) | no protocol reports these features; scenes replaced; the PN532 driver never enters card-emulation mode. Per-protocol helper functions remain linked but unreachable | a saved card's menu has no Emulate or Write; hold the device to a reader and confirm it is not seen as a card |

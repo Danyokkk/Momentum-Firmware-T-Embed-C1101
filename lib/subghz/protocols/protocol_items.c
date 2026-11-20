@@ -64,6 +64,10 @@ const SubGhzProtocol* const subghz_protocol_registry_items[] = {
     &subghz_protocol_keyfinder2,    &subghz_protocol_freezer,
     &subghz_protocol_faac_tm,       &subghz_protocol_proteco,
     &subghz_protocol_telcoma_edge,  &subghz_protocol_belkorn,
+    /* Prastel 42-bit rolling code from Unleashed; Dynamic -> decode-only via
+     * the transmitter gate. Makes the Sub-GHz set a strict superset of both
+     * Momentum and Unleashed. */
+    &subghz_protocol_prastel,
 };
 
 const SubGhzProtocolRegistry subghz_protocol_registry = {

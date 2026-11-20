@@ -108,4 +108,8 @@
 #include "proteco.h"
 #include "telcoma_edge.h"
 #include "belkorn.h"
+/* Prastel 42-bit rolling code, ported from Unleashed (lib/subghz/protocols); see
+ * docs/tembed-plus/PROVENANCE.md. Dynamic -> decode-only via the transmitter gate.
+ * The 25-bit Prastel / 18-bit Airforce static frames stay in came.c. */
+#include "prastel.h"
 

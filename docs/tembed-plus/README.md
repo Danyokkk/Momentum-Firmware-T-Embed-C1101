@@ -23,6 +23,7 @@ image deny-list. It has not been run on a device.
 | [MOMENTUM_PARITY.md](MOMENTUM_PARITY.md) | every Momentum feature category mapped to this target: present, added, todo, add-on, n/a or withheld |
 | [BOARD_PROFILE.md](BOARD_PROFILE.md) | Plus hardware, pin map, shared-bus conflicts, open hardware questions |
 | [PROVENANCE.md](PROVENANCE.md) | upstream commits reviewed, what was imported from where, licences |
+| [SOR3NT_COMPARISON.md](SOR3NT_COMPARISON.md) | how this firmware compares to the Sor3nt ESP32 port it is based on, category by category, with counts |
 | [RELEASE_GUIDE.md](RELEASE_GUIDE.md) | web flasher; build, back up, flash, SD card, update, rollback, recovery, RF rules; CI and releases |
 
 ## What this branch changes

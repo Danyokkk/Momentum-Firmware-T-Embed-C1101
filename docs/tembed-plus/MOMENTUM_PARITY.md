@@ -58,7 +58,7 @@ Hardware: CC1101 on SPI2 (CS 12, GDO0 3, GDO2 38), band switch GPIO47/48.
 | AllStar Firefly, Nord Ice | both ported and registered. Nord Ice is static; AllStar Firefly is rolling-code (Dynamic), so the lab transmitter gate makes it decode-only | added | build |
 | Unleashed-only: Doorbell32, KeyFinder2, Freezer | ported and registered (static codes), via the Unleashed `common.{c,h}` helper | added | build (a real Freezer capture exists in Unleashed's test resources for a later host test) |
 | Unleashed-only: BelKorn, FAAC TM, Proteco, Telcoma EDGE | ported and registered. BelKorn is rolling-code (Dynamic) → decode-only via the gate; FAAC TM, Proteco, Telcoma EDGE are static | added | build |
-| Unleashed-only: Prastel | no (needs Unleashed's `public_api.h` layer; rolling-code) | todo as decode-only | — |
+| Unleashed-only: Prastel | ported and registered; 42-bit rolling code (Dynamic) → decode-only via the gate. **Last remaining gap: the Sub-GHz decoder set is now a strict superset of both Momentum and Unleashed** | added (2026-11-20) | build + host (`tests/subghz_prastel`: 9,531 encode→decode round-trips) |
 | Transmit a saved static-code or RAW signal | yes, inside the chosen region's bands | present + region gate added | build; region table host-tested |
 | Region lock (Momentum: region service + "Bypass Region Lock") | region presets, default "Not set" = no transmit; no bypass | added | host (`tests/subghz_region`), build |
 | "Extend Freq Bands" (281–361, 378–481, 749–962 MHz) | switch ignored in the HAL | withheld | build |
@@ -89,6 +89,7 @@ regardless of software.
 | Saved cards: open, info, rename, delete | yes | present | build |
 | Card info, More Info, DESFire apps, FeliCa systems, EMV transactions view | yes | present | build |
 | 44 card parsers (transit, hotel, NDEF, …) | loaded as `.fal` plugins from the SD card; upstream ships 42 prebuilt | present, **prebuilt binaries** | not rebuilt here |
+| Supported-card source parsers | SEV-PPK, SK and SZPPK suburban-rail parsers ported from Momentum (2026-11-20) → **40/40 supported-card parity** with Momentum (Sor3nt ships 37). Read-only MIFARE Classic | added | API-parity checked (22 APIs resolve); `.fal` link on the existing `build_nfc_parsers.sh` path |
 | MIFARE Classic: read with keys already known for that card (key cache) | yes; with no keys the result is type + UID only | present | build |
 | MIFARE Classic dictionary attack, nested attack | scene replaced; not compiled | withheld (screen) | image |
 | Extract MFC Keys / Detect Reader / mfkey nonces | scene replaced; not compiled; menu entries hidden | withheld (screen) | image |
