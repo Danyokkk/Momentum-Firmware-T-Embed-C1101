@@ -18,6 +18,7 @@
 #define SUBGHZ_LAST_SETTING_FIELD_FILTER                            "Filter"
 #define SUBGHZ_LAST_SETTING_FIELD_RSSI_THRESHOLD                    "RSSI"
 #define SUBGHZ_LAST_SETTING_FIELD_DELETE_OLD                        "DelOldSignals"
+#define SUBGHZ_LAST_SETTING_FIELD_REMOVE_DUP                        "RemoveDup"
 #define SUBGHZ_LAST_SETTING_FIELD_HOPPING_THRESHOLD                 "HoppingThreshold"
 #define SUBGHZ_LAST_SETTING_FIELD_LED_AND_POWER_AMP                 "LedAndPowerAmp"
 #define SUBGHZ_LAST_SETTING_FIELD_TX_POWER                          "TXPower"
@@ -49,6 +50,7 @@ void subghz_last_settings_load(SubGhzLastSettings* instance, size_t preset_count
     instance->hopping_threshold = -90.0f;
     instance->leds_and_amp = true;
     instance->autosave = false;
+    instance->remove_duplicates = false;
 
     Storage* storage = furi_record_open(RECORD_STORAGE);
     FlipperFormat* fff_data_file = flipper_format_file_alloc(storage);
@@ -127,6 +129,13 @@ void subghz_last_settings_load(SubGhzLastSettings* instance, size_t preset_count
                    fff_data_file,
                    SUBGHZ_LAST_SETTING_FIELD_DELETE_OLD,
                    &instance->delete_old_signals,
+                   1)) {
+                flipper_format_rewind(fff_data_file);
+            }
+            if(!flipper_format_read_bool(
+                   fff_data_file,
+                   SUBGHZ_LAST_SETTING_FIELD_REMOVE_DUP,
+                   &instance->remove_duplicates,
                    1)) {
                 flipper_format_rewind(fff_data_file);
             }
@@ -255,6 +264,10 @@ bool subghz_last_settings_save(SubGhzLastSettings* instance) {
         }
         if(!flipper_format_write_bool(
                file, SUBGHZ_LAST_SETTING_FIELD_DELETE_OLD, &instance->delete_old_signals, 1)) {
+            break;
+        }
+        if(!flipper_format_write_bool(
+               file, SUBGHZ_LAST_SETTING_FIELD_REMOVE_DUP, &instance->remove_duplicates, 1)) {
             break;
         }
         uint32_t tx_power = instance->tx_power;

@@ -57,7 +57,33 @@ LOC_X(LocStrDebug,                 "Debug",             "Depuración",         "
 LOC_X(LocStrHeapTrace,             "Heap Trace",        "Rastreo heap",       "Трассировка кучи")
 LOC_X(LocStrSleepMethod,           "Sleep Method",      "Modo de reposo",     "Режим сна")
 LOC_X(LocStrFileNaming,            "File Naming",       "Nombres archivo",    "Имена файлов")
+LOC_X(LocStrShowHidden,            "Show Hidden",       "Ver ocultos",        "Скрытые файлы")
 
 /* Main menu categories */
 LOC_X(LocStrApplications,          "Applications",      "Aplicaciones",       "Приложения")
 LOC_X(LocStrTools,                 "Tools",             "Herramientas",       "Инструменты")
+
+/* Power settings */
+LOC_X(LocStrBatteryInfo,           "Battery Info",      "Batería",            "Батарея")
+LOC_X(LocStrReboot,                "Reboot",            "Reiniciar",          "Перезагрузка")
+LOC_X(LocStrPowerOff,              "Power Off",         "Apagar",             "Выключить")
+LOC_X(LocStrAutoPowerOff,          "Auto PowerOff",     "Apagado auto",       "Автовыключение")
+LOC_X(LocStrLimitCharge,           "Limit Charge",      "Límite carga",       "Лимит заряда")
+LOC_X(LocStrOffMode,               "Off Mode",          "Modo apagado",       "Режим выкл.")
+LOC_X(LocStrAutoLightSleep,        "Auto Light Sleep",  "Reposo auto",        "Автосон")
+LOC_X(LocStrAutoOffLedUsb,         "Auto Off LED USB",  "Apagar LED USB",     "Автовыкл LED USB")
+LOC_X(LocStrTurnOffDevice,         "Turn Off Device?",  "¿Apagar equipo?",    "Выключить устройство?")
+LOC_X(LocStrRebootType,            "Reboot Type",       "Tipo de reinicio",   "Тип перезагрузки")
+LOC_X(LocStrFirmwareUpgrade,       "Firmware Upgrade",  "Actualizar firmware","Обновить прошивку")
+LOC_X(LocStrRebootFlipper,         "Reboot Flipper",    "Reiniciar Flipper",  "Перезагрузить")
+LOC_X(LocStrRebootToDfu,           "Reboot to DFU Mode?","¿Reiniciar en DFU?", "Перейти в режим DFU?")
+LOC_X(LocStrRebootFlipperQ,        "Reboot Flipper?",   "¿Reiniciar Flipper?","Перезагрузить?")
+
+/* Storage settings */
+LOC_X(LocStrAboutIntStorage,       "About Internal Storage","Memoria interna","Внутренняя память")
+LOC_X(LocStrAboutSdCard,           "About SD Card",     "Tarjeta SD",         "Об SD-карте")
+LOC_X(LocStrMountSdCard,           "Mount SD Card",     "Montar SD",          "Подключить SD")
+LOC_X(LocStrUnmountSdCard,         "Unmount SD Card",   "Desmontar SD",       "Отключить SD")
+LOC_X(LocStrFormatSdCard,          "Format SD Card",    "Formatear SD",       "Форматировать SD")
+LOC_X(LocStrBenchmarkSdCard,       "Benchmark SD Card", "Prueba SD",          "Тест SD")
+LOC_X(LocStrFactoryReset,          "Factory Reset",     "Rest. de fábrica",   "Сброс настроек")

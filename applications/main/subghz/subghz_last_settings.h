@@ -25,6 +25,7 @@ typedef struct {
     uint32_t filter;
     float rssi;
     bool delete_old_signals;
+    bool remove_duplicates; // whole-history dedup of received signals (receive-side only)
     float hopping_threshold;
     bool leds_and_amp;
     uint8_t tx_power;

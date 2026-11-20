@@ -53,7 +53,7 @@ static void subghz_scene_add_to_history_callback(
     uint16_t idx = subghz_history_get_item(subghz->history);
     SubGhzRadioPreset preset = subghz_txrx_get_preset(subghz->txrx);
 
-    if(subghz_history_add_to_history(subghz->history, decoder_base, &preset)) {
+    if(subghz_history_add_to_history(subghz->history, decoder_base, &preset, false)) {
         furi_string_reset(item_name);
         furi_string_reset(item_time);
 

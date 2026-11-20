@@ -15,6 +15,7 @@ enum SubGhzSettingIndex {
     SubGhzSettingIndexIgnoreNiceFlorS,
     SubGhzSettingIndexDeleteOldSignals,
     SubGhzSettingIndexAutosave,
+    SubGhzSettingIndexRemoveDuplicates,
     SubGhzSettingIndexResetToDefault,
     SubGhzSettingIndexLock,
     SubGhzSettingIndexRAWThresholdRSSI,
@@ -345,6 +346,15 @@ static void subghz_scene_receiver_config_set_autosave(VariableItem* item) {
     subghz->last_settings->autosave = index == 1;
 }
 
+static void subghz_scene_receiver_config_set_remove_duplicates(VariableItem* item) {
+    SubGhz* subghz = variable_item_get_context(item);
+    uint8_t index = variable_item_get_current_value_index(item);
+
+    variable_item_set_current_value_text(item, combobox_text[index]);
+
+    subghz->last_settings->remove_duplicates = index == 1;
+}
+
 static void subghz_scene_receiver_config_var_list_enter_callback(void* context, uint32_t index) {
     furi_assert(context);
     SubGhz* subghz = context;
@@ -375,6 +385,7 @@ static void subghz_scene_receiver_config_var_list_enter_callback(void* context, 
         subghz->last_settings->ignore_filter = subghz->ignore_filter;
         subghz->last_settings->filter = subghz->filter;
         subghz->last_settings->delete_old_signals = false;
+        subghz->last_settings->remove_duplicates = false;
         subghz->last_settings->tx_power = subghz->tx_power = 0;
 
         subghz_txrx_hopper_set_state(subghz->txrx, hopping_value[default_index]);
@@ -539,6 +550,17 @@ void subghz_scene_receiver_config_on_enter(void* context) {
             subghz);
 
         value_index = subghz->last_settings->autosave;
+        variable_item_set_current_value_index(item, value_index);
+        variable_item_set_current_value_text(item, combobox_text[value_index]);
+
+        item = variable_item_list_add(
+            subghz->variable_item_list,
+            "Remove Duplicates",
+            COMBO_BOX_COUNT,
+            subghz_scene_receiver_config_set_remove_duplicates,
+            subghz);
+
+        value_index = subghz->last_settings->remove_duplicates;
         variable_item_set_current_value_index(item, value_index);
         variable_item_set_current_value_text(item, combobox_text[value_index]);
     }

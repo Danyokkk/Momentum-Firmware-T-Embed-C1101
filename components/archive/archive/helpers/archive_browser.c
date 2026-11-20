@@ -7,6 +7,7 @@
 #include <core/log.h>
 #include <gui/modules/file_browser_worker.h>
 #include <flipper_application/flipper_application.h>
+#include <momentum_settings.h>
 
 static void
     archive_folder_open_cb(void* context, uint32_t item_cnt, int32_t file_idx, bool is_root) {
@@ -513,8 +514,8 @@ void archive_switch_tab(ArchiveBrowserView* browser, InputKey key) {
         esp_rom_printf("[ARCH] dir_exists('%s')=%d\r\n", furi_string_get_cstr(browser->path), dir_exists);
         if(dir_exists) {
             bool skip_assets = (strcmp(archive_get_tab_ext(tab), "*") == 0) ? false : true;
-            // Hide dot files everywhere except Browser
-            bool hide_dot_files = (strcmp(archive_get_tab_ext(tab), "*") == 0) ? false : true;
+            // Hide dot files unless the user enabled "Show Hidden" in System settings
+            bool hide_dot_files = !momentum_settings_get_bool(MomentumSettingsBoolShowHiddenFiles);
             esp_rom_printf("[ARCH] set_path ext='%s' skip=%d hide_dot=%d\r\n", archive_get_tab_ext(tab), skip_assets, hide_dot_files);
             archive_file_browser_set_path(
                 browser, browser->path, archive_get_tab_ext(tab), skip_assets, hide_dot_files);

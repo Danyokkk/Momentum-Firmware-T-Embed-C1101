@@ -3,6 +3,7 @@
 #include <lib/toolbox/value_index.h>
 #include <locale/locale.h>
 #include <locale/locale_i18n.h>
+#include <momentum_settings.h>
 
 static void language_changed(VariableItem* item) {
     uint8_t index = variable_item_get_current_value_index(item);
@@ -10,6 +11,13 @@ static void language_changed(VariableItem* item) {
      * endonym in the value column renders with the matching font. */
     locale_lang_set((LocaleLang)index);
     variable_item_set_current_value_text(item, locale_lang_endonym((LocaleLang)index));
+}
+
+static void show_hidden_changed(VariableItem* item) {
+    uint8_t index = variable_item_get_current_value_index(item);
+    variable_item_set_current_value_text(item, index ? loc_str(LocStrOn) : loc_str(LocStrOff));
+    momentum_settings_set_bool(MomentumSettingsBoolShowHiddenFiles, index != 0);
+    momentum_settings_save();
 }
 
 const char* const log_level_text[] = {
@@ -328,6 +336,12 @@ SystemSettings* system_settings_alloc(void) {
     value_index = furi_hal_rtc_is_flag_set(FuriHalRtcFlagDetailedFilename) ? 1 : 0;
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, filename_scheme[value_index]);
+
+    item = variable_item_list_add(
+        app->var_item_list, loc_str(LocStrShowHidden), 2, show_hidden_changed, app);
+    value_index = momentum_settings_get_bool(MomentumSettingsBoolShowHiddenFiles) ? 1 : 0;
+    variable_item_set_current_value_index(item, value_index);
+    variable_item_set_current_value_text(item, value_index ? loc_str(LocStrOn) : loc_str(LocStrOff));
 
     view_set_previous_callback(
         variable_item_list_get_view(app->var_item_list), system_settings_exit);

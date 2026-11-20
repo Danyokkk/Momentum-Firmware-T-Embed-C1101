@@ -1,5 +1,6 @@
 #include "../power_settings_app.h"
 #include <dolphin/dolphin.h>
+#include <locale/locale_i18n.h>
 
 void power_settings_scene_power_off_dialog_callback(DialogExResult result, void* context) {
     furi_assert(context);
@@ -17,7 +18,7 @@ void power_settings_scene_power_off_on_enter(void* context) {
 
     dialog_ex_set_header(
         dialog,
-        "Turn Off Device?",
+        loc_str(LocStrTurnOffDevice),
         64,
         settings.happy_mode ? 32 : 0,
         AlignCenter,
@@ -27,8 +28,8 @@ void power_settings_scene_power_off_on_enter(void* context) {
             dialog, "   I will be\nwaiting for\n you here...", 78, 14, AlignLeft, AlignTop);
         dialog_ex_set_icon(dialog, 24, 10, &I_dolph_cry_49x54);
     }
-    dialog_ex_set_left_button_text(dialog, "Settings");
-    dialog_ex_set_right_button_text(dialog, "Power Off");
+    dialog_ex_set_left_button_text(dialog, loc_str(LocStrSettings));
+    dialog_ex_set_right_button_text(dialog, loc_str(LocStrPowerOff));
     dialog_ex_set_result_callback(dialog, power_settings_scene_power_off_dialog_callback);
     dialog_ex_set_context(dialog, app);
 

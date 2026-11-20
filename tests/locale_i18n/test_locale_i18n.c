@@ -101,6 +101,12 @@ int main(void) {
     CHECK(locale_lang_endonym(LocaleLangES)[0] != '\0');
     CHECK(locale_lang_endonym(LocaleLangRU)[0] != '\0');
 
+    /* Extended coverage (2026-11): power/storage settings + show-hidden toggle. */
+    CHECK(strcmp(loc_str_lang(LocaleLangEN, LocStrFactoryReset), "Factory Reset") == 0);
+    CHECK(strcmp(loc_str_lang(LocaleLangES, LocStrFactoryReset), "Rest. de f\xC3\xA1" "brica") == 0); /* fábrica */
+    CHECK(strcmp(loc_str_lang(LocaleLangEN, LocStrShowHidden), "Show Hidden") == 0);
+    CHECK(loc_str_lang(LocaleLangRU, LocStrReboot)[0] != '\0'); /* Cyrillic present */
+
     /* Persistence round-trip: save Russian, wipe in-memory state via a reload. */
     locale_lang_set(LocaleLangRU);
     g_canvas_lang = -1;

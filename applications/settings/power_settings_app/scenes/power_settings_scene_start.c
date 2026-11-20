@@ -1,6 +1,7 @@
 #include "../power_settings_app.h"
 #include <lib/toolbox/value_index.h>
 #include <furi_hal_light.h>
+#include <locale/locale_i18n.h>
 
 enum PowerSettingsSubmenuIndex {
     PowerSettingsSubmenuIndexBatteryInfo,
@@ -86,16 +87,16 @@ void power_settings_scene_start_on_enter(void* context) {
     PowerSettingsApp* app = context;
     VariableItemList* variable_item_list = app->variable_item_list;
 
-    variable_item_list_add(variable_item_list, "Battery Info", 1, NULL, NULL);
-    variable_item_list_add(variable_item_list, "Reboot", 1, NULL, NULL);
-    variable_item_list_add(variable_item_list, "Power OFF", 1, NULL, NULL);
+    variable_item_list_add(variable_item_list, loc_str(LocStrBatteryInfo), 1, NULL, NULL);
+    variable_item_list_add(variable_item_list, loc_str(LocStrReboot), 1, NULL, NULL);
+    variable_item_list_add(variable_item_list, loc_str(LocStrPowerOff), 1, NULL, NULL);
 
     VariableItem* item;
     uint8_t value_index;
 
     item = variable_item_list_add(
         variable_item_list,
-        "Auto PowerOff",
+        loc_str(LocStrAutoPowerOff),
         AUTO_POWEROFF_DELAY_COUNT,
         power_settings_scene_start_auto_poweroff_delay_changed,
         app);
@@ -109,7 +110,7 @@ void power_settings_scene_start_on_enter(void* context) {
 
     item = variable_item_list_add(
         variable_item_list,
-        "Limit Charge",
+        loc_str(LocStrLimitCharge),
         CHARGE_SUPRESS_PERCENT_COUNT,
         power_settings_scene_start_charge_supress_percent_changed,
         app);
@@ -123,7 +124,7 @@ void power_settings_scene_start_on_enter(void* context) {
 
     item = variable_item_list_add(
         variable_item_list,
-        "Off Mode",
+        loc_str(LocStrOffMode),
         OFF_MODE_COUNT,
         power_settings_scene_start_off_mode_changed,
         app);
@@ -136,7 +137,7 @@ void power_settings_scene_start_on_enter(void* context) {
 #if CONFIG_PM_ENABLE
     item = variable_item_list_add(
         variable_item_list,
-        "Auto Light Sleep",
+        loc_str(LocStrAutoLightSleep),
         ON_OFF_COUNT,
         power_settings_scene_start_auto_light_sleep_changed,
         app);
@@ -148,7 +149,7 @@ void power_settings_scene_start_on_enter(void* context) {
     if(furi_hal_light_pixel_count() > 0) {
         item = variable_item_list_add(
             variable_item_list,
-            "Auto Off LED USB",
+            loc_str(LocStrAutoOffLedUsb),
             ON_OFF_COUNT,
             power_settings_scene_start_led_usb_auto_off_changed,
             app);

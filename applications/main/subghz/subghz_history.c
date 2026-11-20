@@ -1,7 +1,9 @@
 #include "subghz_history.h"
+#include "subghz_history_dedup.h"
 #include <lib/subghz/receiver.h>
 
 #include <furi.h>
+#include <string.h>
 
 #define SUBGHZ_HISTORY_MAX       55
 #define SUBGHZ_HISTORY_FREE_HEAP 20480
@@ -27,6 +29,7 @@ struct SubGhzHistory {
     uint32_t last_update_timestamp;
     uint16_t last_index_write;
     uint8_t code_last_hash_data;
+    uint32_t hash_list[SUBGHZ_HISTORY_MAX]; // parallel to history->data; for Remove Duplicates
     FuriString* tmp_string;
     SubGhzHistoryStruct* history;
 };
@@ -101,6 +104,13 @@ void subghz_history_delete_item(SubGhzHistory* instance, uint16_t idx) {
         item->type = 0;
         SubGhzHistoryItemArray_remove_v(instance->history->data, idx, idx + 1);
         instance->last_index_write--;
+        // Keep hash_list parallel to the item array after removal.
+        if(idx < instance->last_index_write) {
+            memmove(
+                &instance->hash_list[idx],
+                &instance->hash_list[idx + 1],
+                (instance->last_index_write - idx) * sizeof(uint32_t));
+        }
     }
 }
 
@@ -182,7 +192,8 @@ void subghz_history_get_time_item_menu(SubGhzHistory* instance, FuriString* outp
 bool subghz_history_add_to_history(
     SubGhzHistory* instance,
     void* context,
-    SubGhzRadioPreset* preset) {
+    SubGhzRadioPreset* preset,
+    bool remove_duplicates) {
     furi_assert(instance);
     furi_assert(context);
 
@@ -202,6 +213,16 @@ bool subghz_history_add_to_history(
        ((furi_get_tick() - instance->last_update_timestamp) < 500)) {
         instance->last_update_timestamp = furi_get_tick();
         FURI_LOG_D(TAG, "Duplicate, skipping");
+        return false;
+    }
+
+    // "Remove Duplicates": suppress a code already present anywhere in the
+    // current receiver history, not just the immediately previous one. Uses the
+    // 32-bit long hash for a low-collision whole-history scan. Receive-side only.
+    uint32_t long_hash = subghz_protocol_decoder_base_get_hash_data_long(decoder_base);
+    if(remove_duplicates &&
+       subghz_history_dedup_in_list(instance->hash_list, instance->last_index_write, long_hash)) {
+        FURI_LOG_D(TAG, "Remove Duplicates: already in history, skipping");
         return false;
     }
 
@@ -303,6 +324,7 @@ bool subghz_history_add_to_history(
     } while(false);
 
     furi_string_free(text);
+    instance->hash_list[instance->last_index_write] = long_hash;
     instance->last_index_write++;
     return true;
 }

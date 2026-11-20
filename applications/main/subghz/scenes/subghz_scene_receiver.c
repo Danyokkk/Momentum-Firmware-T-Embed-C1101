@@ -130,7 +130,8 @@ static void subghz_scene_add_to_history_callback(
                 idx--;
             }
         }
-        if(subghz_history_add_to_history(history, decoder_base, &preset)) {
+        if(subghz_history_add_to_history(
+               history, decoder_base, &preset, subghz->last_settings->remove_duplicates)) {
             furi_string_reset(item_name);
             furi_string_reset(item_time);
 

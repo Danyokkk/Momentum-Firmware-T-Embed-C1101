@@ -46,7 +46,9 @@ Hardware: CC1101 on SPI2 (CS 12, GDO0 3, GDO2 38), band switch GPIO47/48.
 | Receiver config: frequency, modulation, hopping, RSSI threshold, Bin RAW, ignore filters, sound, lock keyboard | yes (port's set) | present | build |
 | Receiver config: Autosave | added: an "Autosave received signals" toggle; when on, every saveable decoded signal is written to `/subghz/Autosave` under a timestamped name. Receive-side only; TX gates still apply to replays | added | build |
 | Receiver config: Delete Old Signals | already present ("Delete old signals when memory is full") | present | build |
-| Receiver config: Repeater, Remove Duplicates, split Ignore Weather/TPMS | no (the port already dedupes consecutive repeats and has a combined "Ignore Sensors"; Repeater relays signals) | todo | — |
+| Receiver config: Remove Duplicates | added: a receive-side toggle that suppresses any code already in the current receiver history (whole-history scan on the 32-bit long hash), not only the immediately preceding one. Default off; the existing consecutive-repeat path is byte-for-byte unchanged when off. RAW-file re-decode is never deduped | added | host (`tests/subghz_history_dedup`: consecutive, whole-history, A-B-A, wrap-around), build |
+| Receiver config: Repeater | Repeater relays (re-transmits) received signals — a TX action, excluded by the passive stance | withheld | — |
+| Receiver config: split Ignore Weather/TPMS | combined "Ignore Sensors" only | todo | — |
 | 58 registered protocols | the port registers its own 58 (near-identical list; adds Holtek HT6P20B and Agilize); AllStar Firefly and Nord Ice added here (below) | present | build |
 | 25 weather-station protocols (present in Momentum's tree but commented out of its registry) | registered and active here | added | host: 4 decoders against 5 real captures, 21 against synthetic fixtures (see `tests/subghz_ws/README.md`) |
 | TPMS Schrader GG4 (commented out in Momentum) | active, plus Ford, Renault, Citroën, PMV-107J | present | build |
@@ -218,7 +220,7 @@ Momentum firmware has no Wi-Fi; it relies on external ESP boards and apps
 | Lock screen: PIN, auto-lock, lock on boot, bad-PIN format, show time/date/statusbar | PIN set/change/remove, auto-lock time, USB-session disarm, lock-screen style | present (subset) / todo | build |
 | Keybinds (press/hold × 4 directions → app or file) | favourite-app slots and dummy-mode keys; encoder has no 4-way pad | present (adapted) | build |
 | Status bar: battery icon styles, clock, icons, borders | battery style (5), clock, background | present (subset) | build |
-| File browser options (hidden files, internal tab, path display, sort) | no | todo | — |
+| File browser options: show hidden files | added: a "Show Hidden" toggle in Settings → System drives the archive browser's dot-file filter, persisted in `MomentumSettings` (`/int/.momentum.settings`). Default off = dot files hidden on every tab (Momentum-faithful). Internal tab, path breadcrumb and sort order are still todo | added / todo | build |
 | Dark mode, left-handed, text scroll, popup overlay | UI foreground/background colours, night shift | present (different) / todo | build |
 | RGB backlight, rainbow | LCD backlight PWM; RGB **LED ring** colour/effect/speed (different hardware) | present (adapted) | build |
 | Notification settings: volume, backlight time, LED brightness, stealth | yes; no vibro, no LCD contrast | present / n/a | build |
@@ -296,3 +298,8 @@ Nord Ice, Hörmann BiSecur, Doorbell32, KeyFinder2, Freezer, FAAC TM, Proteco,
 Telcoma EDGE, BelKorn — only Prastel remains); the System settings app; the
 USB and Bluetooth HID remotes (stealth jiggler withheld); an `i2cscan` CLI
 command; and the Blu-ray/DVD, Monitor and Digital-sign IR universal remotes.
+Added 2026-11-18: a Sub-GHz receiver "Remove Duplicates" toggle (receive-side
+whole-history dedup, host-tested; Repeater stays withheld as a TX relay); a
+"Show Hidden" file-browser toggle in System settings; and EN/ES/RU localisation
+extended to the Power and Storage settings apps (labels + Reboot/Power-Off/DFU
+dialogs), on top of the existing System-settings coverage.

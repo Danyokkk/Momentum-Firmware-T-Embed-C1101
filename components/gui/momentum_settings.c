@@ -7,7 +7,7 @@
 #define TAG "MomentumSettings"
 
 #define MOMENTUM_SETTINGS_MAGIC (0x4D)
-#define MOMENTUM_SETTINGS_VER   (1)
+#define MOMENTUM_SETTINGS_VER   (2)
 
 static MomentumSettings momentum_settings = {
     .asset_pack = "",
@@ -26,6 +26,7 @@ static MomentumSettings momentum_settings = {
     .lockscreen_prompt = true,
     .lockscreen_transparent = false,
     .lockscreen_skip_animation = false,
+    .show_hidden_files = false,
     .statusbar_hidden = 0,
 };
 
@@ -48,6 +49,7 @@ static const size_t momentum_settings_bool_offsets[MomentumSettingsBoolCount] = 
     [MomentumSettingsBoolLockscreenSkipAnimation] =
         offsetof(MomentumSettings, lockscreen_skip_animation),
     [MomentumSettingsBoolUnlockAnims] = offsetof(MomentumSettings, unlock_anims),
+    [MomentumSettingsBoolShowHiddenFiles] = offsetof(MomentumSettings, show_hidden_files),
 };
 
 static bool* momentum_settings_bool_ptr(MomentumSettingsBool setting) {

@@ -42,6 +42,8 @@ typedef struct {
     bool lockscreen_transparent;
     bool lockscreen_skip_animation;
 
+    bool show_hidden_files;
+
     uint32_t statusbar_hidden;
 } MomentumSettings;
 
@@ -59,6 +61,7 @@ typedef enum {
     MomentumSettingsBoolLockscreenTransparent,
     MomentumSettingsBoolLockscreenSkipAnimation,
     MomentumSettingsBoolUnlockAnims,
+    MomentumSettingsBoolShowHiddenFiles,
     MomentumSettingsBoolCount,
 } MomentumSettingsBool;
 

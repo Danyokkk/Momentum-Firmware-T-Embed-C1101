@@ -121,7 +121,8 @@ uint16_t subghz_history_get_last_index(SubGhzHistory* instance);
 bool subghz_history_add_to_history(
     SubGhzHistory* instance,
     void* context,
-    SubGhzRadioPreset* preset);
+    SubGhzRadioPreset* preset,
+    bool remove_duplicates);
 
 /** Get SubGhzProtocolCommonLoad to load into the protocol decoder bin data
  * 
